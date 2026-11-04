@@ -3,95 +3,134 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="supported-color-schemes" content="light dark" />
   <title>{{ subject_title }}</title>
+  <style type="text/css">
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      body, .email-wrapper { background-color: #121212 !important; }
+      .email-card { background-color: #1c1c1e !important; border-color: #2c2c2e !important; }
+      .email-card-td { background-color: #1c1c1e !important; }
+      .card-surface { background-color: #2c2c2e !important; border-color: #3a3a3c !important; }
+      .text-primary { color: #f5f5f7 !important; }
+      .text-body { color: #d1d1d6 !important; }
+      .text-secondary { color: #8e8e93 !important; }
+      .border-subtle { border-color: #2c2c2e !important; }
+      .badge-err { background-color: #3a1d1d !important; color: #f87171 !important; }
+      .code-block { background-color: #2c2c2e !important; color: #f5f5f7 !important; border-left-color: #f5f5f7 !important; }
+    }
+    [data-ogsc] .email-wrapper { background-color: #121212 !important; }
+    [data-ogsc] .email-card { background-color: #1c1c1e !important; border-color: #2c2c2e !important; }
+    [data-ogsc] .email-card-td { background-color: #1c1c1e !important; }
+    [data-ogsc] .card-surface { background-color: #2c2c2e !important; border-color: #3a3a3c !important; }
+    [data-ogsc] .text-primary { color: #f5f5f7 !important; }
+    [data-ogsc] .text-body { color: #d1d1d6 !important; }
+    [data-ogsc] .text-secondary { color: #8e8e93 !important; }
+  </style>
 </head>
-<body style="margin: 0; padding: 30px 10px; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1d1d1f;">
+<body style="margin: 0; padding: 0; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1d1d1f;">
 
-  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5ea; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);">
-    
-    <!-- Header -->
-    <tr>
-      <td style="padding: 36px 36px 20px 36px; background-color: #ffffff; border-bottom: 1px solid #f2f2f7;">
-        <div style="display: inline-block; background-color: #fef2f2; color: #b91c1c; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 12px; border-radius: 980px; margin-bottom: 12px;">
-          &bull; Incidente Operacional
-        </div>
-        <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; line-height: 1.2;">
-          Falha na Rotina de Sincronização
-        </h1>
-        <p style="margin: 6px 0 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">
-          Ocorrência detectada em {{ now_str }}
-        </p>
-      </td>
-    </tr>
+  <!-- Wrapper Geral para manter o fundo sólido em webmails com Dark Mode -->
+  <div class="email-wrapper" style="width: 100%; background-color: #f5f5f7; margin: 0; padding: 30px 0; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-wrapper" style="background-color: #f5f5f7; border-collapse: collapse; margin: 0; padding: 0;">
+      <tr>
+        <td align="center" style="padding: 0 12px; background-color: #f5f5f7;" class="email-wrapper">
 
-    <!-- Content -->
-    <tr>
-      <td style="padding: 28px 36px 36px 36px; background-color: #ffffff;">
-        <p style="margin: 0 0 16px 0; font-size: 14px; color: #1d1d1f; line-height: 1.5;">
-          Prezado Administrador,
-        </p>
-        <p style="margin: 0 0 16px 0; font-size: 13px; color: #424245; line-height: 1.5;">
-          A rotina de sincronização do <strong>Conecta LegalOne</strong> foi interrompida devido a uma falha crítica que requer atenção imediata.
-        </p>
+          <!-- Card Central -->
+          <table role="presentation" align="center" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-card" style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5ea; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);">
+            
+            <!-- Header -->
+            <tr>
+              <td class="email-card-td border-subtle" style="padding: 36px 36px 20px 36px; background-color: #ffffff; border-bottom: 1px solid #f2f2f7;">
+                <div class="badge-err" style="display: inline-block; background-color: #fef2f2; color: #b91c1c; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 12px; border-radius: 980px; margin-bottom: 12px;">
+                  &bull; Incidente Operacional
+                </div>
+                <h1 class="text-primary" style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; line-height: 1.2;">
+                  Falha na Rotina de Sincronização
+                </h1>
+                <p class="text-secondary" style="margin: 6px 0 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">
+                  Ocorrência detectada em {{ now_str }}
+                </p>
+              </td>
+            </tr>
 
-        <!-- Error Card Monocromático -->
-        <div style="background-color: #f5f5f7; border-left: 4px solid #1d1d1f; border-radius: 4px; padding: 16px; margin: 18px 0;">
-          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #86868b; margin-bottom: 6px;">
-            Diagnóstico do Erro
-          </div>
-          <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 13px; color: #1d1d1f; line-height: 1.45; word-break: break-word;">
-            {{ error_message }}
-          </div>
-        </div>
+            <!-- Content -->
+            <tr>
+              <td class="email-card-td" style="padding: 28px 36px 36px 36px; background-color: #ffffff;">
+                <p class="text-primary" style="margin: 0 0 16px 0; font-size: 14px; color: #1d1d1f; line-height: 1.5; font-weight: 600;">
+                  Prezado Administrador,
+                </p>
+                <p class="text-body" style="margin: 0 0 16px 0; font-size: 13px; color: #424245; line-height: 1.5;">
+                  A rotina de sincronização do <strong>Conecta LegalOne</strong> foi interrompida devido a uma falha crítica que requer atenção imediata.
+                </p>
 
-        {% if context_details %}
-        <p style="margin: 16px 0 20px 0; font-size: 13px; color: #6e6e73; line-height: 1.5;">
-          <strong style="color: #1d1d1f;">Contexto Operacional:</strong><br />
-          {{ context_details }}
-        </p>
-        {% endif %}
+                <!-- Error Card Monocromático -->
+                <div class="card-surface code-block" style="background-color: #f5f5f7; border-left: 4px solid #1d1d1f; border-radius: 6px; padding: 16px; margin: 18px 0;">
+                  <div class="text-secondary" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #86868b; margin-bottom: 6px;">
+                    Diagnóstico do Erro
+                  </div>
+                  <div class="text-primary" style="font-family: 'SF Mono', Consolas, monospace; font-size: 13px; color: #1d1d1f; line-height: 1.45; word-break: break-word;">
+                    {{ error_message }}
+                  </div>
+                </div>
 
-        <!-- Detalhes do Incidente -->
-        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-top: 20px; font-size: 13px;">
-          <tr>
-            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; width: 35%; font-weight: 600;">
-              Módulo Afetado
-            </td>
-            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f; font-weight: 600;">
-              {{ subject_title }}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; font-weight: 600;">
-              Horário do Evento
-            </td>
-            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f;">
-              {{ now_str }}
-            </td>
-          </tr>
-          <tr>
-            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; font-weight: 600;">
-              Ação Sugerida
-            </td>
-            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f;">
-              Verifique as credenciais no arquivo <code>.env</code> ou a disponibilidade do serviço afetado.
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
+                {% if context_details %}
+                <p class="text-body" style="margin: 16px 0 20px 0; font-size: 13px; color: #6e6e73; line-height: 1.5;">
+                  <strong class="text-primary" style="color: #1d1d1f;">Contexto Operacional:</strong><br />
+                  {{ context_details }}
+                </p>
+                {% endif %}
 
-    <!-- Footer -->
-    <tr>
-      <td align="center" style="padding: 20px 36px 26px 36px; background-color: #f5f5f7; border-top: 1px solid #e5e5ea;">
-        <p style="margin: 0; font-size: 11px; color: #86868b; line-height: 1.4;">
-          Sistema de Monitoramento LegalOne &bull; Notificação de Emergência Automática<br />
-          Conecta LegalOne Sync &bull; Departamento de Tecnologia
-        </p>
-      </td>
-    </tr>
+                <!-- Detalhes do Incidente -->
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="email-card" style="border-collapse: collapse; margin-top: 20px; font-size: 13px; background-color: #ffffff;">
+                  <tr>
+                    <td class="email-card-td text-secondary border-subtle" style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; width: 35%; font-weight: 600; background-color: #ffffff;">
+                      Módulo Afetado
+                    </td>
+                    <td class="email-card-td text-primary border-subtle" style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f; font-weight: 600; background-color: #ffffff;">
+                      {{ subject_title }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="email-card-td text-secondary border-subtle" style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; font-weight: 600; background-color: #ffffff;">
+                      Horário do Evento
+                    </td>
+                    <td class="email-card-td text-primary border-subtle" style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f; background-color: #ffffff;">
+                      {{ now_str }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="email-card-td text-secondary border-subtle" style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; font-weight: 600; background-color: #ffffff;">
+                      Ação Sugerida
+                    </td>
+                    <td class="email-card-td text-primary border-subtle" style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f; background-color: #ffffff;">
+                      Verifique as credenciais no arquivo <code>.env</code> ou a disponibilidade do serviço afetado.
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
 
-  </table>
+            <!-- Footer -->
+            <tr>
+              <td align="center" class="card-surface border-subtle" style="padding: 20px 36px 26px 36px; background-color: #f5f5f7; border-top: 1px solid #e5e5ea;">
+                <p class="text-secondary" style="margin: 0; font-size: 11px; color: #86868b; line-height: 1.4;">
+                  Sistema de Monitoramento LegalOne &bull; Notificação de Emergência Automática<br />
+                  Conecta LegalOne Sync &bull; Departamento de Tecnologia
+                </p>
+              </td>
+            </tr>
+
+          </table>
+
+        </td>
+      </tr>
+    </table>
+  </div>
 
 </body>
 </html>
