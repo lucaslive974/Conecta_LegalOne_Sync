@@ -20,6 +20,8 @@ data/*.db-journal
 .pytest_cache/
 .ruff_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
 
 # Arquivos sensíveis ou temporários

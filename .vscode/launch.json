@@ -1,0 +1,61 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: LegalOne Sync (Run)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/source/main.py",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Python: Teste SMTP (--test-smtp)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/source/main.py",
+      "args": ["--test-smtp"],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Python: Teste Nextcloud (--test-nextcloud)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/source/main.py",
+      "args": ["--test-nextcloud"],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "name": "Python: Pytest Arquivo Atual",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "${file}",
+        "-v"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+    {
+      "name": "Python: Pytest Todos com Coverage",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [
+        "tests",
+        "-v",
+        "--cov=source",
+        "--cov-report=term-missing",
+        "--cov-report=xml"
+      ],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}
