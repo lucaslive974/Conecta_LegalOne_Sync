@@ -10,10 +10,10 @@ services:
     env_file:
       - .env
     volumes:
-      # Mantém o histórico do banco SQLite persistente no host
-      - ./data:/app/data
-      # Mantém a cópia local dos documentos DOCX e PDF gerados
-      - ./storage:/app/storage
-      # Diretório temporário
+      # Volume do banco SQLite configurável via DB_VOLUME_PATH (padrão: ./data)
+      - ${DB_VOLUME_PATH:-./data}:/app/data
+      # Volume da cópia local dos arquivos DOCX e PDF configurável via STORAGE_VOLUME_PATH (padrão: ./storage)
+      - ${STORAGE_VOLUME_PATH:-./storage}:/app/storage
+      # Diretório temporário para renderização do LibreOffice
       - ./temp:/app/temp
     restart: "no"
