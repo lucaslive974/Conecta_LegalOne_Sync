@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-Script para teste de renderização e envio dos e-mails transacionais do sistema:
-1. Alerta Crítico ao Administrador (Falha de Login / Falha de Nextcloud)
-2. Relatório Diário Matinal com Magic Links e KPIs
+Test script for rendering and dispatching transactional system emails:
+1. Critical Administrator Alert (Login failure / Nextcloud failure)
+2. Daily Morning Report with Magic Links and KPIs
 
-Uso:
-    python scripts/test_email_templates.py --preview              (Gera arquivos HTML para visualização)
-    python scripts/test_email_templates.py --send-admin-alert     (Dispara e-mail real de alerta de falha)
-    python scripts/test_email_templates.py --send-daily-summary   (Dispara e-mail real com relatório diário)
-    python scripts/test_email_templates.py --send-all             (Dispara ambos os e-mails de teste)
+Usage:
+    python scripts/test_email_templates.py --preview              (Generates HTML files for local inspection)
+    python scripts/test_email_templates.py --send-admin-alert     (Dispatches real failure alert email)
+    python scripts/test_email_templates.py --send-daily-summary   (Dispatches real daily report email)
+    python scripts/test_email_templates.py --send-all             (Dispatches both test emails)
 """
 import sys
 import os
@@ -71,7 +71,7 @@ def main():
         out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "temp")
         os.makedirs(out_dir, exist_ok=True)
 
-        # 1. Renderiza alerta
+        # 1. Render alert template
         t_alert = jinja_env.get_template("admin_alert.html")
         html_alert = t_alert.render(
             subject_title="Simulação de Falha de Login LegalOne",
@@ -83,7 +83,7 @@ def main():
         with open(p1, "w", encoding="utf-8") as f:
             f.write(html_alert)
 
-        # 2. Renderiza relatório diário
+        # 2. Render daily summary template
         t_summary = jinja_env.get_template("daily_summary.html")
         html_summary = t_summary.render(
             now_str=now_str,

@@ -20,8 +20,8 @@ def setup_logging():
 
 def test_nextcloud_bootstrap(app_config: AppConfig) -> NextcloudClient:
     """
-    Testa a conectividade e autenticação com o Nextcloud no bootstrap.
-    Levanta exceção caso não consiga se autenticar ou alcançar o endpoint WebDAV.
+    Test connectivity and authentication with Nextcloud at bootstrap.
+    Raises an exception if unable to authenticate or reach the WebDAV endpoint.
     """
     logging.info("Testando conexão WebDAV com Nextcloud em %s (usuário: %s)...", app_config.nextcloud_url, app_config.nextcloud_user)
     client = NextcloudClient(
@@ -37,28 +37,28 @@ def test_nextcloud_bootstrap(app_config: AppConfig) -> NextcloudClient:
 
 def bootstrap_checks():
     """
-    Executa os testes obrigatórios de inicialização antes de qualquer interação com o LegalOne:
-    1. Validação de variáveis obrigatórias
-    2. Teste de conectividade SMTP (falha aborta imediatamente)
-    3. Teste de conectividade Nextcloud WebDAV (falha alerta admin e aborta imediatamente)
+    Execute mandatory bootstrap checks prior to any interaction with LegalOne:
+    1. Essential configuration validation
+    2. Mandatory SMTP connectivity test (aborts on failure)
+    3. Mandatory Nextcloud WebDAV test (alerts admin and aborts on failure)
     """
     logging.info("--> Executando validação de inicialização (Bootstrap Checks)...")
     
-    # 1. Validação de variáveis obrigatórias
+    # 1. Essential environment variable validation
     try:
         config.validate_essential_configs()
     except ValueError as ve:
         logging.critical("✕ Erro nas variáveis de ambiente:\n%s", ve)
         sys.exit(1)
 
-    # 2. Teste mandatário de SMTP
+    # 2. Mandatory SMTP check
     try:
         test_smtp_connection(config)
     except Exception as e:
         logging.critical("✕ FATAL: O teste de SMTP falhou. A aplicação não inicializará.\nErro: %s", e)
         sys.exit(1)
 
-    # 3. Teste mandatário de Nextcloud (executado antes de qualquer raspagem / consulta ao LegalOne)
+    # 3. Mandatory Nextcloud check (executed before any LegalOne calls)
     try:
         test_nextcloud_bootstrap(config)
     except Exception as e:
@@ -109,7 +109,7 @@ def main():
             print(f"[✕] Falha no teste de Nextcloud: {e}")
             sys.exit(1)
 
-    # Executa validações de bootstrap (incluindo SMTP e Nextcloud antes de iniciar o processo)
+    # Run bootstrap checks (including SMTP and Nextcloud before starting process)
     bootstrap_checks()
 
     service = SyncService(config)
@@ -138,7 +138,7 @@ def main():
             logging.info("Serviço daemon finalizado.")
             sys.exit(0)
     else:
-        # Modo Padrão: Rodar e parar (ideal para chamadas via crontab / docker run / docker exec)
+        # Default mode: Run and exit (ideal for crontab / docker run / docker exec)
         try:
             service.run_sync()
             logging.info("Rotina finalizada com sucesso. Encerrando execução.")

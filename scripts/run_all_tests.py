@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Suíte unificada de testes e diagnósticos do Conecta LegalOne Sync.
-Executa todos os testes unitários e de integração em sequência.
+Unified test and diagnostics suite for Conecta LegalOne Sync.
+Runs all unit and integration tests sequentially.
 
-Uso:
+Usage:
     python scripts/run_all_tests.py
 """
 import sys
@@ -29,27 +29,27 @@ def main():
 
     results = {}
 
-    # 1. Teste SMTP
+    # 1. SMTP Test
     results["1. Conexão SMTP (Porta 465 SSL)"] = run_subtest(
         "Teste de Conexão e Autenticação SMTP", "test_smtp.py"
     )
 
-    # 2. Teste Nextcloud WebDAV + Magic Links
+    # 2. Nextcloud WebDAV + Magic Links Test
     results["2. Nextcloud WebDAV & Magic Links"] = run_subtest(
         "Teste de WebDAV e Magic Links do Nextcloud", "test_nextcloud.py", ["--full-crud"]
     )
 
-    # 3. Teste Geração DOCX + PDF
+    # 3. DOCX + PDF Generation Test
     results["3. Renderização DOCX e PDF (LibreOffice)"] = run_subtest(
         "Teste de Formatação DOCX e PDF", "test_document_generation.py"
     )
 
-    # 4. Teste Templates de E-mail
+    # 4. Email Templates Test
     results["4. Templates HTML Jinja2"] = run_subtest(
         "Teste de Templates de E-mail (Preview)", "test_email_templates.py", ["--preview"]
     )
 
-    # Resumo Final
+    # Final Summary
     print("\n" + "=" * 50)
     print("                 RESUMO DOS TESTES                ")
     print("=" * 50)

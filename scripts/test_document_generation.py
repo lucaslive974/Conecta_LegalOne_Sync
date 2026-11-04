@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Script de teste de geração de relatórios DOCX e conversão para PDF via LibreOffice.
+Test script for DOCX report generation and PDF conversion via LibreOffice.
 
-Uso:
+Usage:
     python scripts/test_document_generation.py
 """
 import sys
@@ -17,7 +17,7 @@ from source.document_generator import DocumentGenerator
 
 
 def get_sample_process():
-    """Tenta obter um processo real do banco SQLite local ou gera um mock completo."""
+    """Attempt to retrieve a real lawsuit from local SQLite database or generate a complete mock."""
     if os.path.exists(config.db_path):
         try:
             conn = sqlite3.connect(config.db_path)
@@ -32,7 +32,7 @@ def get_sample_process():
         except Exception:
             pass
 
-    # Mock realista
+    # Realistic mock data
     mock = {
         "id": 999999,
         "numeroCNJ": "0000000-00.2026.8.00.0000",

@@ -18,9 +18,9 @@ logger = logging.getLogger(__name__)
 
 def extract_party_names(proc: Dict[str, Any]) -> List[str]:
     """
-    Extrai os nomes dos autores e réus principais.
-    Ignora deliberadamente contatos do tipo 'Responsável' ou 'Advogado' para evitar
-    que processos de todo o escritório sejam duplicados sob a pasta do advogado interno.
+    Extract main plaintiff and defendant party names.
+    Deliberately ignores 'Responsável' or 'Advogado' contacts to prevent
+    office-wide lawsuits from being duplicated under internal lawyer folders.
     """
     contatos = proc.get("contatos") or []
     parties = set()
@@ -30,7 +30,7 @@ def extract_party_names(proc: Dict[str, Any]) -> List[str]:
         nome = agn.get("nome")
         if not nome:
             continue
-        # Não adiciona o advogado ou responsável interno como polo do processo
+        # Do not add internal lawyers or representatives as a main dispute party
         if any(ign in pos for ign in ["responsável", "responsavel", "advogado", "patrono"]):
             continue
         if any(p in pos for p in ["autor", "réu", "reu", "exequente", "executado", "embargante", "embargado", "parte"]):
@@ -42,7 +42,7 @@ def extract_party_names(proc: Dict[str, Any]) -> List[str]:
 
 
 class SyncService:
-    """Orquestrador do ciclo completo de sincronização, geração de relatórios e espelhamento."""
+    """Orchestrator for synchronization lifecycle, report generation, and mirroring."""
 
     def __init__(self, config: AppConfig):
         self.config = config
@@ -55,22 +55,22 @@ class SyncService:
 
     def run_sync(self) -> Dict[str, Any]:
         """
-        Executa o fluxo completo diário:
-        1. Login no LegalOne (com alerta em caso de falha)
-        2. Inicialização do Nextcloud (preparação de pastas rotativas e arquivo permanente)
-        3. Rotação diária: Move itens anteriores de 'Novos_e_Atualizados' para 'Arquivo_Geral'
-        4. Geração/Obtenção dos Magic Links públicos para a pasta rotativa e acervo geral
-        5. Varredura incremental dos processos
-        6. Geração de relatórios e exportação para PDF
-        7. Salvamento na cópia local e upload EXCLUSIVO de PDF para o Nextcloud
-        8. Envio de e-mail com relatório diário e Magic Links públicos
+        Execute full daily workflow:
+        1. LegalOne login (with alert on failure)
+        2. Nextcloud initialization (prepare rotating and permanent archive folders)
+        3. Daily rotation: Move previous items from 'Novos_e_Atualizados' to 'Arquivo_Geral'
+        4. Generate/obtain public Magic Links for rotating and archive folders
+        5. Incremental scan of lawsuits
+        6. Generate DOCX reports and render to PDF
+        7. Save local backup and upload EXCLUSIVELY PDF to Nextcloud
+        8. Send daily summary email with public Magic Links
         """
         logger.info("==================================================")
         logger.info("Iniciando rotina de sincronização Conecta LegalOne")
         logger.info("Data/Hora: %s", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         logger.info("==================================================")
 
-        # 1. Login no LegalOne
+        # 1. LegalOne login
         try:
             logger.info("Autenticando no Conecta LegalOne com e-mail: %s...", self.config.legalone_email)
             auth_data = login_legalone(
@@ -96,7 +96,7 @@ class SyncService:
                 logger.error("Falha secundária ao enviar e-mail de alerta: %s", mail_err)
             raise
 
-        # 2. Inicialização Nextcloud
+        # 2. Nextcloud initialization
         nc_client = NextcloudClient(
             base_url=self.config.nextcloud_url,
             user=self.config.nextcloud_user,
@@ -110,14 +110,14 @@ class SyncService:
         nc_client.ensure_directory(daily_folder)
         nc_client.ensure_directory(archive_folder)
 
-        # 3. Rotação: arquiva os itens da execução anterior e limpa a pasta rotativa do dia
+        # 3. Rotation: archive previous execution items and clear daily folder
         logger.info("Verificando rotação da pasta diária '%s'...", daily_folder)
         try:
             nc_client.archive_previous_daily_updates(daily_folder, archive_folder)
         except Exception as rot_err:
             logger.warning("Aviso na rotação de arquivos do Nextcloud: %s", rot_err)
 
-        # 4. Obtém ou cria os Magic Links públicos (Pasta do Dia e Arquivo Geral)
+        # 4. Obtain or create public Magic Links (Daily folder and General Archive)
         magic_link_daily = None
         magic_link_archive = None
         try:
@@ -128,7 +128,7 @@ class SyncService:
         except Exception as link_err:
             logger.warning("Não foi possível gerar Magic Links públicos: %s", link_err)
 
-        # 5. Inicializa cliente LegalOne
+        # 5. Initialize LegalOne client
         client = LegalOneClient(
             token=token,
             tenant_id=self.config.legalone_tenant_id,
@@ -186,7 +186,7 @@ class SyncService:
                 first_party = sanitize_filename(parties[0])
 
                 if not is_changed:
-                    # Verifica integridade da cópia local e do arquivo PDF no Nextcloud
+                    # Verify local file and remote Nextcloud PDF integrity
                     local_proc_folder = os.path.join(self.local_storage_dir, first_party)
                     local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
                     remote_archive_pdf = f"{archive_folder}/{first_party}/{safe_cnj}_Relatorio.pdf"
@@ -209,7 +209,7 @@ class SyncService:
                     else:
                         logger.info("Processo sem alteração na API mas com PDF ausente em disco. Recriando: %s", cnj)
 
-                # Busca detalhes com publicações e andamentos atualizados
+                # Fetch details including updated publications and progress history
                 proc_full = item
                 if pub_id:
                     try:
@@ -219,18 +219,18 @@ class SyncService:
                     except Exception as e:
                         logger.warning("Não foi possível obter detalhes da pub %s: %s", pub_id, e)
 
-                # Salva no banco SQLite interno
+                # Persist in local SQLite database
                 self.db.save_process(proc_full, pub_id=pub_id)
 
-                # Gera documentos (DOCX base e renderiza PDF)
+                # Generate documents (base DOCX and render PDF)
                 docx_tmp, pdf_tmp = self.doc_generator.render_process_documents(proc_full, base_name=f"{safe_cnj}_Relatorio")
 
                 if not pdf_tmp or not os.path.exists(pdf_tmp):
                     logger.error("Falha ao gerar PDF para o processo: %s", cnj)
                     continue
 
-                # 1. Salva na cópia local e no Nextcloud agrupado diretamente por Parte:
-                # Estrutura: Parte A / {CNJ}_Relatorio.pdf (sem subpastas aninhadas desnecessárias)
+                # 1. Save local backup and group by Party:
+                # Structure: Party A / {CNJ}_Relatorio.pdf
                 parties = extract_party_names(proc_full)
                 for party in parties:
                     safe_party = sanitize_filename(party)
@@ -243,15 +243,15 @@ class SyncService:
                     local_pdf = os.path.join(local_folder, f"{safe_cnj}_Relatorio.pdf")
                     shutil.copy2(pdf_tmp, local_pdf)
 
-                    # 2. Upload no Nextcloud: EXCLUSIVAMENTE PDF para a pasta da Parte no Arquivo Geral
+                    # 2. Upload to Nextcloud: PDF ONLY into the Party folder inside General Archive
                     try:
                         remote_archive_pdf = f"{archive_folder}/{safe_party}/{safe_cnj}_Relatorio.pdf"
                         nc_client.upload_file(local_pdf, remote_archive_pdf)
                     except Exception as upload_err:
                         logger.error("Erro no upload do PDF do processo %s para Arquivo_Geral: %s", cnj, upload_err)
 
-                # 3. Upload na Pasta Rotativa Diária (Magic Link do Dia):
-                # IMPORTANTE: Enviado EXATAMENTE UMA VEZ por processo (evita duplicatas na pasta do dia)
+                # 3. Upload to Daily Rotating Folder (Daily Magic Link):
+                # Uploaded EXACTLY ONCE per lawsuit to avoid duplicates
                 try:
                     parties_label = " x ".join(parties[:2]) if len(parties) >= 2 else (parties[0] if parties else "Processo")
                     safe_label = sanitize_filename(parties_label)
@@ -261,7 +261,7 @@ class SyncService:
                 except Exception as upload_daily_err:
                     logger.error("Erro no upload para pasta diária do processo %s: %s", cnj, upload_daily_err)
 
-                # Remove arquivos temporários
+                # Remove temporary files
                 try:
                     if os.path.exists(docx_tmp):
                         os.remove(docx_tmp)
@@ -272,7 +272,7 @@ class SyncService:
 
                 total_synced += 1
 
-                # Coleta resumo para o e-mail diário
+                # Collect summary item for daily email
                 andamentos = proc_full.get("recentProgresses") or proc_full.get("progresses") or []
                 ultimo_txt = "Sem andamento recente registrado"
                 if andamentos:
@@ -302,7 +302,7 @@ class SyncService:
 
         logger.info("Sincronização concluída com sucesso! Atualizados: %s | Inalterados: %s | Total: %s", total_synced, total_skipped, total_items)
 
-        # 8. Notifica os usuários via e-mail com os Magic Links (Dia e Arquivo Geral)
+        # 8. Notify users via email with public Magic Links
         try:
             logger.info("Enviando relatório diário por e-mail para: %s...", self.config.notification_emails)
             send_daily_summary(

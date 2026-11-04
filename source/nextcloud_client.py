@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class NextcloudClient:
-    """Cliente WebDAV e OCS Share para integração com Nextcloud."""
+    """WebDAV and OCS Share client for Nextcloud integration."""
 
     def __init__(self, base_url: str, user: str, password: str, verify_ssl: bool = True):
         self.base_url = base_url.rstrip("/")
@@ -19,9 +19,9 @@ class NextcloudClient:
         self.verify_ssl = verify_ssl
         self.auth = HTTPBasicAuth(self.user, self.password)
         
-        # Endpoint padrão WebDAV do Nextcloud
+        # Default Nextcloud WebDAV endpoint
         self.dav_base_url = f"{self.base_url}/remote.php/dav/files/{urllib.parse.quote(self.user)}"
-        # Endpoint OCS API para gerenciamento de compartilhamentos (Magic Links)
+        # Nextcloud OCS Share API endpoint for Magic Links
         self.ocs_share_url = f"{self.base_url}/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
         self.session = requests.Session()
@@ -30,8 +30,8 @@ class NextcloudClient:
 
     def test_connection(self) -> bool:
         """
-        Testa a conectividade com o Nextcloud enviando um PROPFIND para a raiz do usuário.
-        Retorna True se autenticado com sucesso, ou levanta exceção explicativa.
+        Test connectivity with Nextcloud by sending a PROPFIND to the user root.
+        Returns True on successful authentication or raises an explanatory exception.
         """
         headers = {"Depth": "0"}
         try:
@@ -49,7 +49,7 @@ class NextcloudClient:
 
     def exists(self, remote_rel_path: str) -> bool:
         """
-        Verifica se um arquivo ou diretório existe no Nextcloud via PROPFIND.
+        Check if a file or directory exists on Nextcloud via PROPFIND.
         """
         clean_path = remote_rel_path.strip("/")
         remote_url = f"{self.dav_base_url}/{urllib.parse.quote(clean_path)}"
@@ -62,7 +62,7 @@ class NextcloudClient:
 
     def ensure_directory(self, remote_dir: str):
         """
-        Garante recursivamente que a estrutura de diretórios remotos existe no Nextcloud.
+        Recursively ensure remote directory structure exists on Nextcloud.
         """
         clean_path = remote_dir.strip("/")
         if not clean_path:
@@ -84,13 +84,13 @@ class NextcloudClient:
 
     def upload_file(self, local_path: str, remote_rel_path: str) -> str:
         """
-        Faz upload de um arquivo local para o caminho remoto no Nextcloud via PUT.
-        Retorna a URL remota de destino.
+        Upload a local file to the remote path on Nextcloud via PUT.
+        Returns the remote destination URL.
         """
         if not os.path.exists(local_path):
             raise FileNotFoundError(f"Arquivo local não encontrado: {local_path}")
 
-        # Garante que o diretório pai remoto exista
+        # Ensure parent remote directory exists
         remote_dir = os.path.dirname(remote_rel_path)
         if remote_dir:
             self.ensure_directory(remote_dir)
@@ -109,8 +109,8 @@ class NextcloudClient:
 
     def list_subitems(self, remote_rel_path: str) -> List[str]:
         """
-        Lista os caminhos relativos dos subitens (arquivos e pastas) contidos em um diretório remoto.
-        Não inclui o próprio diretório pai.
+        List relative paths of subitems (files and folders) within a remote directory.
+        Excludes the parent directory itself.
         """
         clean_path = remote_rel_path.strip("/")
         folder_url = f"{self.dav_base_url}/{urllib.parse.quote(clean_path)}/"
@@ -132,7 +132,7 @@ class NextcloudClient:
                     continue
                 raw_href = urllib.parse.unquote(href_el.text)
                 if raw_href.rstrip("/").lower() != prefix.rstrip("/"):
-                    # Extrai o caminho relativo dentro de clean_path
+                    # Extract relative path inside clean_path
                     idx = raw_href.lower().find(prefix)
                     if idx != -1:
                         rel = raw_href[idx + len(prefix):].strip("/")
@@ -144,7 +144,7 @@ class NextcloudClient:
             return []
 
     def move_item(self, source_rel_path: str, dest_rel_path: str, overwrite: bool = True) -> bool:
-        """Move ou renomeia um arquivo/pasta no Nextcloud via WebDAV MOVE."""
+        """Move or rename a file/folder on Nextcloud via WebDAV MOVE."""
         clean_src = source_rel_path.strip("/")
         clean_dst = dest_rel_path.strip("/")
 
@@ -172,7 +172,7 @@ class NextcloudClient:
             return False
 
     def delete_item(self, remote_rel_path: str) -> bool:
-        """Remove um arquivo ou diretório do Nextcloud via WebDAV DELETE."""
+        """Delete a file or directory from Nextcloud via WebDAV DELETE."""
         clean_path = remote_rel_path.strip("/")
         url = f"{self.dav_base_url}/{urllib.parse.quote(clean_path)}"
         try:
@@ -184,8 +184,8 @@ class NextcloudClient:
 
     def get_or_create_public_share(self, remote_rel_path: str) -> Optional[str]:
         """
-        Obtém ou cria um Magic Link público (somente leitura) para uma pasta no Nextcloud
-        através da Nextcloud OCS Share API.
+        Get or create a public read-only Magic Link for a Nextcloud directory
+        via Nextcloud OCS Share API.
         """
         clean_path = remote_rel_path.strip("/")
         self.ensure_directory(clean_path)
@@ -195,7 +195,7 @@ class NextcloudClient:
             "Accept": "application/json"
         }
 
-        # 1. Verifica se já existe um link público ativo para essa pasta
+        # 1. Check if an active public share already exists for this folder
         try:
             res = self.session.get(self.ocs_share_url, headers=headers, params={"path": f"/{clean_path}"}, timeout=15)
             if res.status_code == 200:
@@ -207,7 +207,7 @@ class NextcloudClient:
         except Exception as e:
             logger.warning("Erro ao consultar shares existentes para %s: %s", clean_path, e)
 
-        # 2. Se não existir, cria um novo compartilhamento público (shareType: 3, permissions: 1 = read-only)
+        # 2. Otherwise create a new public share (shareType: 3, permissions: 1 = read-only)
         try:
             payload = {
                 "path": f"/{clean_path}",
@@ -229,9 +229,8 @@ class NextcloudClient:
 
     def archive_previous_daily_updates(self, daily_folder_rel: str, archive_folder_rel: str):
         """
-        Limpa a pasta rotativa diária 'Novos_e_Atualizados' movendo os itens antigos
-        para a pasta permanente 'Arquivo_Geral', mantendo a pasta raiz intacta para
-        preservar o Magic Link público para os novos arquivos do dia.
+        Clear the daily rotating folder 'Novos_e_Atualizados' by moving older items
+        into permanent 'Arquivo_Geral', preserving the root folder and its public Magic Link.
         """
         clean_daily = daily_folder_rel.strip("/")
         clean_archive = archive_folder_rel.strip("/")
@@ -245,7 +244,7 @@ class NextcloudClient:
         for item in subitems:
             src = f"{clean_daily}/{item}"
             dst = f"{clean_archive}/{item}"
-            # Se for um item de primeiro nível (ex: pasta de um processo)
+            # If it is a top-level item (e.g. process file/folder)
             if "/" not in item:
                 self.move_item(src, dst)
             else:

@@ -20,8 +20,8 @@ jinja_env = jinja2.Environment(
 
 def test_smtp_connection(config: AppConfig) -> bool:
     """
-    Testa a conexão e autenticação com o servidor SMTP no bootstrap.
-    Falha e levanta exceção se não conseguir conectar ou autenticar.
+    Test connectivity and authentication with SMTP server at bootstrap.
+    Fails and raises an exception if unable to connect or authenticate.
     """
     if not config.smtp_host:
         raise ValueError("SMTP_HOST não foi configurado.")
@@ -50,7 +50,7 @@ def test_smtp_connection(config: AppConfig) -> bool:
 
 
 def send_email(config: AppConfig, to_addresses: List[str], subject: str, html_content: str, text_content: Optional[str] = None):
-    """Envia um e-mail HTML/texto via SMTP para a lista de destinatários informada."""
+    """Send an HTML/text email via SMTP to the provided recipient list."""
     if not to_addresses:
         logger.warning("Nenhum destinatário informado para envio de e-mail.")
         return
@@ -91,7 +91,7 @@ def send_email(config: AppConfig, to_addresses: List[str], subject: str, html_co
 
 def send_admin_alert(config: AppConfig, subject_title: str, error_message: str, context_details: str = ""):
     """
-    Renderiza o template admin_alert.html e envia alerta crítico ao administrador.
+    Render admin_alert.html template and send critical alert to the administrator.
     """
     if not config.admin_email:
         logger.warning("ADMIN_EMAIL não definido. Alerta de erro não pôde ser enviado por e-mail: %s", error_message)
@@ -120,8 +120,8 @@ def send_daily_summary(
     magic_link_archive: Optional[str] = None
 ):
     """
-    Renderiza o template daily_summary.html e envia relatório executivo aos destinatários
-    com os Magic Links públicos para a pasta do dia e para o acervo geral completo.
+    Render daily_summary.html template and send executive summary to recipients
+    with public Magic Links to daily updates and the complete archive.
     """
     recipients = config.notification_emails
     if not recipients:

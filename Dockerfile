@@ -1,12 +1,12 @@
 FROM python:3.12-slim
 
-# Evita perguntas interativas durante o apt-get
+# Avoid interactive prompts during apt-get
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     TZ=America/Sao_Paulo
 
-# Instala LibreOffice (para conversão fiel de DOCX para PDF), fontes e utilitários
+# Install LibreOffice (for accurate DOCX to PDF rendering), fonts, and utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-writer \
     fonts-dejavu \
@@ -17,15 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Cria diretórios de persistência e scratch
+# Create persistence and scratch directories
 RUN mkdir -p /app/data /app/storage /app/temp
 
-# Copia pyproject.toml e código-fonte
+# Copy pyproject.toml and source code
 COPY pyproject.toml README.md ./
 COPY source/ /app/source/
 
-# Instala o pacote e suas dependências via pyproject.toml
+# Install package and dependencies via pyproject.toml
 RUN pip install --no-cache-dir .
 
-# Ponto de entrada padrão (script CLI registrado no pyproject.toml)
+# Default entry point (CLI script declared in pyproject.toml)
 ENTRYPOINT ["legalone-sync"]

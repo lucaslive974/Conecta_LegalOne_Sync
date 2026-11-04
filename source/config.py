@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from dotenv import load_dotenv
 
-# Carrega variáveis de ambiente de um arquivo .env se existir
+# Load environment variables from a .env file if present
 load_dotenv()
 
 
@@ -25,7 +25,7 @@ def _parse_email_list(val: Optional[str]) -> List[str]:
                 return [str(e).strip() for e in parsed if str(e).strip()]
         except Exception:
             pass
-    # Separação por vírgula ou ponto-e-vírgula
+    # Comma or semicolon separation
     return [e.strip() for e in val.replace(";", ",").split(",") if e.strip()]
 
 
@@ -66,7 +66,7 @@ class AppConfig:
     max_pages: Optional[int] = field(default_factory=lambda: int(os.getenv("MAX_PAGES")) if os.getenv("MAX_PAGES") else None)
 
     def validate_essential_configs(self):
-        """Valida se as configurações mínimas para operação estão presentes."""
+        """Validate that essential configurations required for operation are present."""
         errors = []
         if not self.legalone_email:
             errors.append("LEGALONE_EMAIL não configurado.")

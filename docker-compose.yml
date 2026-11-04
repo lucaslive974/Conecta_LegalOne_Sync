@@ -10,10 +10,10 @@ services:
     env_file:
       - .env
     volumes:
-      # Volume do banco SQLite configurável via DB_VOLUME_PATH (padrão: ./data)
+      # SQLite database volume configurable via DB_VOLUME_PATH (default: ./data)
       - ${DB_VOLUME_PATH:-./data}:/app/data
-      # Volume da cópia local dos arquivos DOCX e PDF configurável via STORAGE_VOLUME_PATH (padrão: ./storage)
+      # Local backup storage volume configurable via STORAGE_VOLUME_PATH (default: ./storage)
       - ${STORAGE_VOLUME_PATH:-./storage}:/app/storage
-      # Diretório temporário para renderização do LibreOffice
+      # Temporary scratch folder for LibreOffice conversion
       - ./temp:/app/temp
     restart: "no"

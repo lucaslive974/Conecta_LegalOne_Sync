@@ -10,7 +10,7 @@ DEFAULT_LOGIN_URL = "https://conecta-api.legalone.com.br/api/auth/login"
 
 
 def extract_tenant_id_from_jwt(token: str) -> Optional[str]:
-    """Extrai automaticamente o tenantId do payload do JWT Bearer."""
+    """Automatically extract tenantId from JWT Bearer payload."""
     try:
         clean = token.strip()
         if clean.lower().startswith("bearer "):
@@ -32,10 +32,10 @@ def extract_tenant_id_from_jwt(token: str) -> Optional[str]:
 
 def login_legalone(email: str, password: str, access_code: str, base_url: Optional[str] = None) -> Dict[str, Any]:
     """
-    Realiza o login na API Conecta LegalOne.
+    Authenticate against the Conecta LegalOne API.
     
-    Header esperado: Authorization: Basic <base64(email:password)>
-    Body JSON: {"accessCode": "<código de acesso>"}
+    Expected Header: Authorization: Basic <base64(email:password)>
+    JSON Body: {"accessCode": "<access code>"}
     """
     user_pass = f"{email.strip()}:{password}".encode("utf-8")
     basic_token = base64.b64encode(user_pass).decode("utf-8")
@@ -69,7 +69,7 @@ def login_legalone(email: str, password: str, access_code: str, base_url: Option
         logger.error("Falha na autenticação LegalOne: %s (Status: %s)", error_msg, res.status_code)
         raise ValueError(error_msg)
 
-    # Extrai o token da raiz ou do objeto 'data'
+    # Extract token from root or nested 'data' object
     token = data.get("token") or (data.get("data") if isinstance(data.get("data"), dict) else {}).get("token")
     if not token and isinstance(data, dict):
         for k in ("token", "jwt", "accessToken", "access_token"):

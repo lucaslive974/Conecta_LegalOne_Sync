@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class LegalOneClient:
-    """Cliente HTTP para a API Conecta LegalOne."""
+    """HTTP client for Conecta LegalOne API."""
 
     def __init__(self, token: str, tenant_id: Optional[str] = None, base_url: str = "https://conecta-api.legalone.com.br"):
         self.base_url = base_url.rstrip("/")
@@ -27,7 +27,7 @@ class LegalOneClient:
         })
 
     def get_processes_page(self, page: int = 1, limit: int = 18, search_filter: str = "") -> Dict[str, Any]:
-        """Consulta uma página de processos na API Conecta LegalOne."""
+        """Fetch a paginated list of lawsuits from Conecta LegalOne API."""
         url = f"{self.base_url}/api/process"
         params = {"page": page, "limit": limit, "filter": search_filter}
         res = self.session.get(url, params=params, timeout=35)
@@ -35,7 +35,7 @@ class LegalOneClient:
         return res.json()
 
     def get_process_by_publication(self, pub_id: Any) -> Dict[str, Any]:
-        """Consulta os dados detalhados e publicações de um processo."""
+        """Fetch detailed lawsuit information and publications by publication ID."""
         url = f"{self.base_url}/api/process/{pub_id}"
         res = self.session.get(url, timeout=35)
         res.raise_for_status()

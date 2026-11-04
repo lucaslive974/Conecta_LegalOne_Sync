@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Script de teste de conectividade e envio SMTP.
-Permite validar conexão, autenticação, simular falhas e enviar e-mail real de teste.
+Test script for SMTP connectivity and message delivery.
+Supports validating connection, authentication, simulating failures, and sending real test emails.
 
-Uso:
+Usage:
     python scripts/test_smtp.py
     python scripts/test_smtp.py --send-test
     python scripts/test_smtp.py --simulate-failure
@@ -13,7 +13,7 @@ import os
 import argparse
 from datetime import datetime
 
-# Garante acesso aos módulos de source
+# Ensure access to source package modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from source.config import config, AppConfig

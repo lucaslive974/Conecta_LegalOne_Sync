@@ -25,7 +25,7 @@ SQL_GET_PARTIES_SUMMARY = _read_sql("get_parties_summary.sql")
 
 
 class Database:
-    """Gerencia o controle incremental e histórico de processos em SQLite utilizando arquivos SQL desacoplados."""
+    """Manage incremental tracking and lawsuit history in SQLite using decoupled SQL files."""
 
     def __init__(self, db_path: str):
         self.db_path = db_path
@@ -35,7 +35,7 @@ class Database:
         self.create_tables()
 
     def create_tables(self):
-        """Executa o script DDL de criação de tabelas e índices."""
+        """Execute DDL script to create tables and indexes."""
         with self.conn:
             self.conn.executescript(SQL_SCHEMA)
 

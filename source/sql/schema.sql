@@ -1,4 +1,4 @@
--- Tabela principal de processos jurídicos
+-- Main table for lawsuits
 CREATE TABLE IF NOT EXISTS processes (
     id INTEGER PRIMARY KEY,
     id_adv_publication INTEGER,
@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS processes (
     last_synced_at TEXT
 );
 
--- Tabela de andamentos e publicações
+-- Lawsuit progress and publications table
 CREATE TABLE IF NOT EXISTS progresses (
     id INTEGER PRIMARY KEY,
     process_id INTEGER,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS progresses (
     FOREIGN KEY(process_id) REFERENCES processes(id)
 );
 
--- Tabela de partes e envolvidos
+-- Lawsuit parties and contacts table
 CREATE TABLE IF NOT EXISTS contacts (
     id INTEGER PRIMARY KEY,
     process_id INTEGER,
@@ -40,6 +40,6 @@ CREATE TABLE IF NOT EXISTS contacts (
     FOREIGN KEY(process_id) REFERENCES processes(id)
 );
 
--- Índices de performance
+-- Performance indexes
 CREATE INDEX IF NOT EXISTS idx_proc_cnj ON processes(numero_cnj);
 CREATE INDEX IF NOT EXISTS idx_prog_proc ON progresses(process_id);

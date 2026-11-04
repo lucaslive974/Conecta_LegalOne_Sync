@@ -15,7 +15,7 @@ from docx.oxml.ns import nsdecls, qn
 
 logger = logging.getLogger(__name__)
 
-# Paleta Monocromática Estilo Apple
+# Apple-style monochromatic palette
 COLOR_BLACK = RGBColor(29, 29, 31)       # #1D1D1F
 COLOR_DARK = RGBColor(66, 66, 69)        # #424245
 COLOR_MUTED = RGBColor(134, 134, 139)    # #86868B
@@ -25,7 +25,7 @@ HEX_BLACK = "1D1D1F"                     # #1D1D1F
 
 
 def sanitize_filename(name: str) -> str:
-    """Higieniza nomes para arquivos e diretórios."""
+    """Sanitize names for files and directories."""
     if not name:
         return "SEM_NOME"
     clean = re.sub(r'[<>:"/\\|?*\n\r\t]', '_', name).strip()
@@ -33,14 +33,14 @@ def sanitize_filename(name: str) -> str:
 
 
 def set_cell_background(cell, fill_hex: str):
-    """Define a cor de fundo de uma célula da tabela."""
+    """Set the background color of a table cell."""
     tcPr = cell._tc.get_or_add_tcPr()
     shd = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{fill_hex}"/>')
     tcPr.append(shd)
 
 
 def set_cell_margins(cell, top=100, bottom=100, left=140, right=140):
-    """Define margens internas de uma célula."""
+    """Set internal margins of a table cell."""
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = parse_xml(
         f'<w:tcMar {nsdecls("w")}>'
@@ -54,7 +54,7 @@ def set_cell_margins(cell, top=100, bottom=100, left=140, right=140):
 
 
 def set_table_borders(table, color=HEX_BORDER, sz="4"):
-    """Aplica bordas suaves e elegantes na tabela."""
+    """Apply soft, clean borders to a table."""
     tblPr = table._tbl.tblPr
     borders = parse_xml(
         f'<w:tblBorders {nsdecls("w")}>'
@@ -70,24 +70,24 @@ def set_table_borders(table, color=HEX_BORDER, sz="4"):
 
 
 class DocumentGenerator:
-    """Responsável por gerar o arquivo DOCX estruturado e converter para PDF no padrão minimalista Apple."""
+    """Generate structured DOCX documents and convert to PDF following a clean minimalist Apple design."""
 
     def __init__(self, temp_dir: str):
         self.temp_dir = temp_dir
         os.makedirs(temp_dir, exist_ok=True)
 
     def generate_process_docx(self, proc: Dict[str, Any], output_path: str) -> str:
-        """Cria um relatório em formato DOCX minimalista e moderno no padrão Apple."""
+        """Create a lawsuit report in minimalist DOCX format."""
         doc = docx.Document()
 
-        # Configura margens refinadas (2 cm = ~0.78 polegadas)
+        # Configure refined margins (2 cm = ~0.78 inches)
         for section in doc.sections:
             section.top_margin = Inches(0.8)
             section.bottom_margin = Inches(0.8)
             section.left_margin = Inches(0.8)
             section.right_margin = Inches(0.8)
 
-        # Dados principais
+        # Key lawsuit data
         cnj = proc.get("numeroCNJ") or f"ID_{proc.get('id')}"
         p_id = proc.get("id") or "N/A"
         pasta = proc.get("pasta") or "N/A"
@@ -99,7 +99,7 @@ class DocumentGenerator:
         dt_atualizacao = proc.get("dtHrUltimaAtualizacaoDc") or "N/A"
         dt_cadastro = proc.get("dtHrCadastro") or "N/A"
 
-        # 1. Cabeçalho Minimalista Apple
+        # 1. Apple-style minimalist header
         p_header = doc.add_paragraph()
         p_header.paragraph_format.space_before = Pt(0)
         p_header.paragraph_format.space_after = Pt(2)
@@ -126,14 +126,14 @@ class DocumentGenerator:
         run_sub.font.size = Pt(9.5)
         run_sub.font.color.rgb = COLOR_MUTED
 
-        # Divisor sutil
+        # Subtle divider
         p_hr = doc.add_paragraph()
         p_hr.paragraph_format.space_before = Pt(0)
         p_hr.paragraph_format.space_after = Pt(10)
         p_hr_border = parse_xml(f'<w:pBdr {nsdecls("w")}><w:bottom w:val="single" w:sz="6" w:space="1" w:color="{HEX_BORDER}"/></w:pBdr>')
         p_hr._p.get_or_add_pPr().append(p_hr_border)
 
-        # 2. Dados Gerais do Processo
+        # 2. Lawsuit overview table
         h1 = doc.add_heading("1. Dados Gerais do Processo", level=2)
         h1.paragraph_format.space_before = Pt(8)
         h1.paragraph_format.space_after = Pt(6)
@@ -165,7 +165,7 @@ class DocumentGenerator:
             for c in (c0, c1, c2, c3):
                 set_cell_margins(c, top=80, bottom=80, left=100, right=100)
 
-            # Rótulo 1
+            # Label 1
             set_cell_background(c0, HEX_SURFACE)
             p = c0.paragraphs[0]
             p.paragraph_format.space_after = Pt(0)
@@ -175,7 +175,7 @@ class DocumentGenerator:
             run.font.bold = True
             run.font.color.rgb = COLOR_MUTED
 
-            # Valor 1
+            # Value 1
             p = c1.paragraphs[0]
             p.paragraph_format.space_after = Pt(0)
             run = p.add_run(v1)
@@ -183,7 +183,7 @@ class DocumentGenerator:
             run.font.size = Pt(9)
             run.font.color.rgb = COLOR_BLACK
 
-            # Rótulo 2
+            # Label 2
             set_cell_background(c2, HEX_SURFACE)
             p = c2.paragraphs[0]
             p.paragraph_format.space_after = Pt(0)
@@ -193,7 +193,7 @@ class DocumentGenerator:
             run.font.bold = True
             run.font.color.rgb = COLOR_MUTED
 
-            # Valor 2
+            # Value 2
             p = c3.paragraphs[0]
             p.paragraph_format.space_after = Pt(0)
             run = p.add_run(v2)
@@ -201,7 +201,7 @@ class DocumentGenerator:
             run.font.size = Pt(9)
             run.font.color.rgb = COLOR_BLACK
 
-        # 3. Tabela de Partes e Envolvidos
+        # 3. Parties and stakeholders table
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
         h2 = doc.add_heading("2. Polos Processuais e Partes", level=2)
         h2.paragraph_format.space_before = Pt(12)
@@ -261,7 +261,7 @@ class DocumentGenerator:
             p_empty.runs[0].font.size = Pt(9)
             p_empty.runs[0].font.color.rgb = COLOR_MUTED
 
-        # 4. Andamentos e Publicações
+        # 4. Updates and publications
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
         andamentos = proc.get("recentProgresses") or proc.get("progresses") or []
         h3 = doc.add_heading(f"3. Andamentos e Publicações ({len(andamentos)})", level=2)
@@ -287,7 +287,7 @@ class DocumentGenerator:
                 p_item.paragraph_format.space_after = Pt(2)
                 p_item.paragraph_format.keep_with_next = True
 
-                # Índice numerado minimalista
+                # Minimalist numbered index
                 run_num = p_item.add_run(f"#{idx} ")
                 run_num.font.name = "Segoe UI"
                 run_num.font.size = Pt(9)
@@ -305,13 +305,13 @@ class DocumentGenerator:
                 run_orig.font.size = Pt(8.5)
                 run_orig.font.color.rgb = COLOR_MUTED
 
-                # Caixa de citação do andamento com borda lateral esquerda preta fosca
+                # Update blockquote box with matte left border
                 p_desc = doc.add_paragraph()
                 p_desc.paragraph_format.left_indent = Inches(0.2)
                 p_desc.paragraph_format.space_before = Pt(0)
                 p_desc.paragraph_format.space_after = Pt(6)
                 
-                # Borda esquerda monocromática suave
+                # Subtle monochromatic left border
                 pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:left w:val="single" w:sz="14" w:space="8" w:color="{HEX_BLACK}"/></w:pBdr>')
                 p_desc._p.get_or_add_pPr().append(pBdr)
 
@@ -325,7 +325,7 @@ class DocumentGenerator:
             p_none.runs[0].font.size = Pt(9)
             p_none.runs[0].font.color.rgb = COLOR_MUTED
 
-        # Rodapé
+        # Footer
         footer = doc.sections[0].footer
         p_ft = footer.paragraphs[0]
         p_ft.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -341,8 +341,8 @@ class DocumentGenerator:
 
     def convert_docx_to_pdf(self, docx_path: str, out_dir: Optional[str] = None) -> Optional[str]:
         """
-        Converte um arquivo DOCX para PDF utilizando LibreOffice headless.
-        Retorna o caminho do PDF gerado ou None se houver falha.
+        Convert a DOCX file to PDF using LibreOffice headless.
+        Returns the generated PDF file path or None on failure.
         """
         if not os.path.exists(docx_path):
             logger.error("Arquivo DOCX não encontrado para conversão: %s", docx_path)
@@ -371,7 +371,7 @@ class DocumentGenerator:
             return None
 
     def render_process_documents(self, proc: Dict[str, Any], base_name: str) -> Tuple[str, Optional[str]]:
-        """Gera tanto o DOCX quanto o PDF na pasta temporária e retorna (docx_path, pdf_path)."""
+        """Render both DOCX and PDF in temporary folder and return (docx_path, pdf_path)."""
         safe_name = sanitize_filename(base_name)
         docx_path = os.path.join(self.temp_dir, f"{safe_name}.docx")
         self.generate_process_docx(proc, docx_path)

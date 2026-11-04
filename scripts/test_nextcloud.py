@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Script de teste de conectividade, WebDAV, Magic Links e rotação no Nextcloud.
-Permite validar o fluxo WebDAV completo ou simular falhas de autenticação.
+Test script for Nextcloud connectivity, WebDAV, Magic Links, and file rotation.
+Supports validating full WebDAV lifecycle or simulating authentication failures.
 
-Uso:
+Usage:
     python scripts/test_nextcloud.py
     python scripts/test_nextcloud.py --full-crud
     python scripts/test_nextcloud.py --simulate-failure
@@ -58,7 +58,7 @@ def main():
             sys.exit(0)
         sys.exit(1)
 
-    # 2. Teste de pastas e Magic Links
+    # 2. Folder structure and Magic Links test
     print("[*] 2. Validando estrutura de pastas e Magic Links...")
     daily_folder = f"{config.nextcloud_remote_dir}/Novos_e_Atualizados"
     archive_folder = f"{config.nextcloud_remote_dir}/Arquivo_Geral"
@@ -76,7 +76,7 @@ def main():
         print(f"[✕] Falha ao criar/obter Magic Links: {e}")
         sys.exit(1)
 
-    # 3. Teste completo de CRUD se solicitado
+    # 3. Full CRUD test if requested
     if args.full_crud:
         print("[*] 3. Executando teste prático de Upload, Move e Remoção...")
         test_file = os.path.join(tempfile.gettempdir(), "nc_test_sample.txt")
