@@ -94,10 +94,11 @@ O Nextcloud possui suporte nativo ao protocolo **WebDAV**. Para que a aplicaçã
 
 ---
 
-## 📧 Servidor SMTP e Teste de Bootstrap Obrigatório
+## 📧 Validações Obrigatórias de Bootstrap (SMTP & Nextcloud)
 
-Na inicialização da aplicação, o sistema **obrigatoriamente testa a conexão e autenticação com o servidor SMTP** (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`).
-- **Se o servidor SMTP não responder ou as credenciais forem inválidas**, a aplicação **falha imediatamente e encerra com código de erro**, impedindo que a rotina rode sem capacidade de alertar falhas.
+Na inicialização da aplicação, o sistema **obrigatoriamente valida a conexão com o SMTP e com o Nextcloud ANTES de qualquer requisição ao LegalOne**:
+1. **Teste de SMTP**: Se o servidor de e-mail não responder ou a autenticação falhar, a aplicação aborta imediatamente para não rodar sem capacidade de alertas.
+2. **Teste de Nextcloud WebDAV**: Se a URL ou as credenciais do Nextcloud falharem, um e-mail de alerta crítico é enviado imediatamente ao `ADMIN_EMAIL` e a aplicação aborta antes de consultar a API ou fazer qualquer raspagem.
 
 ---
 
@@ -110,10 +111,14 @@ cp .env.example .env
 nano .env
 ```
 
-### 2. Teste o SMTP localmente
-Antes de rodar a rotina completa, você pode validar se suas credenciais de e-mail estão funcionando:
+### 2. Valide as conexões individualmente
+Você pode testar cada serviço isoladamente via terminal:
 ```bash
-./.venv/bin/python3 -m source.main --test-smtp
+# Valida o SMTP
+./.venv/bin/legalone-sync --test-smtp
+
+# Valida o Nextcloud
+./.venv/bin/legalone-sync --test-nextcloud
 ```
 
 ---
