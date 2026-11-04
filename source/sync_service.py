@@ -17,14 +17,23 @@ logger = logging.getLogger(__name__)
 
 
 def extract_party_names(proc: Dict[str, Any]) -> List[str]:
-    """Extrai os nomes dos autores/réus principais ou retorna padrão."""
+    """
+    Extrai os nomes dos autores e réus principais.
+    Ignora deliberadamente contatos do tipo 'Responsável' ou 'Advogado' para evitar
+    que processos de todo o escritório sejam duplicados sob a pasta do advogado interno.
+    """
     contatos = proc.get("contatos") or []
     parties = set()
     for c in contatos:
         pos = (c.get("posicaoEnvolvido") or {}).get("descricao", "").lower()
         agn = c.get("agnContato") or {}
         nome = agn.get("nome")
-        if nome and any(p in pos for p in ["autor", "réu", "reu", "exequente", "executado", "embargante", "embargado"]):
+        if not nome:
+            continue
+        # Não adiciona o advogado ou responsável interno como polo do processo
+        if any(ign in pos for ign in ["responsável", "responsavel", "advogado", "patrono"]):
+            continue
+        if any(p in pos for p in ["autor", "réu", "reu", "exequente", "executado", "embargante", "embargado", "parte"]):
             parties.add(nome)
 
     if not parties:
@@ -50,11 +59,11 @@ class SyncService:
         1. Login no LegalOne (com alerta em caso de falha)
         2. Inicialização do Nextcloud (preparação de pastas rotativas e arquivo permanente)
         3. Rotação diária: Move itens anteriores de 'Novos_e_Atualizados' para 'Arquivo_Geral'
-        4. Geração/Obtenção do Magic Link público para a pasta rotativa do dia
+        4. Geração/Obtenção dos Magic Links públicos para a pasta rotativa e acervo geral
         5. Varredura incremental dos processos
-        6. Geração de DOCX + PDF
-        7. Salvamento na cópia local e upload para Arquivo Geral + Pasta do Dia
-        8. Envio de e-mail com relatório diário e Magic Link público
+        6. Geração de relatórios e exportação para PDF
+        7. Salvamento na cópia local e upload EXCLUSIVO de PDF para o Nextcloud
+        8. Envio de e-mail com relatório diário e Magic Links públicos
         """
         logger.info("==================================================")
         logger.info("Iniciando rotina de sincronização Conecta LegalOne")
@@ -101,7 +110,7 @@ class SyncService:
         nc_client.ensure_directory(daily_folder)
         nc_client.ensure_directory(archive_folder)
 
-        # 3. Rotação: arquiva os itens da execução anterior e limpa a pasta rotativa
+        # 3. Rotação: arquiva os itens da execução anterior e limpa a pasta rotativa do dia
         logger.info("Verificando rotação da pasta diária '%s'...", daily_folder)
         try:
             nc_client.archive_previous_daily_updates(daily_folder, archive_folder)
@@ -172,35 +181,33 @@ class SyncService:
                 if db_info and db_info["dt_hr_ultima_atualizacao"] == api_updated_at and db_info["id_adv_publication"] == pub_id:
                     is_changed = False
 
-                if not is_changed:
-                    # Verifica integridade da cópia local e do arquivo permanente no Nextcloud
-                    safe_cnj = sanitize_filename(cnj)
-                    parties = extract_party_names(item)
-                    first_party = sanitize_filename(parties[0])
-                    local_proc_folder = os.path.join(self.local_storage_dir, first_party, f"Processo Numero {safe_cnj}")
-                    local_docx = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.docx")
-                    local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
-                    remote_archive_proc_folder = f"{archive_folder}/{first_party}/Processo Numero {safe_cnj}"
+                safe_cnj = sanitize_filename(cnj)
+                parties = extract_party_names(item)
+                first_party = sanitize_filename(parties[0])
 
-                    local_ok = os.path.exists(local_docx) and os.path.exists(local_pdf)
-                    remote_ok = nc_client.exists(remote_archive_proc_folder) if local_ok else False
+                if not is_changed:
+                    # Verifica integridade da cópia local e do arquivo PDF no Nextcloud
+                    local_proc_folder = os.path.join(self.local_storage_dir, first_party, f"Processo Numero {safe_cnj}")
+                    local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
+                    remote_archive_pdf = f"{archive_folder}/{first_party}/Processo Numero {safe_cnj}/{safe_cnj}_Relatorio.pdf"
+
+                    local_ok = os.path.exists(local_pdf)
+                    remote_ok = nc_client.exists(remote_archive_pdf) if local_ok else False
 
                     if local_ok and remote_ok:
                         total_skipped += 1
-                        logger.debug("(%s/%s) Sem alterações e espelhamento íntegro no Nextcloud: %s", processed_count, total_items, cnj)
+                        logger.debug("(%s/%s) Sem alterações e PDF íntegro no Nextcloud: %s", processed_count, total_items, cnj)
                         continue
                     elif local_ok and not remote_ok:
-                        logger.info("Detectada remoção remota no Nextcloud para o processo %s. Reenviando cópia local...", cnj)
+                        logger.info("Detectada ausência do PDF no Nextcloud para %s. Reenviando cópia local...", cnj)
                         try:
-                            nc_client.upload_file(local_docx, f"{remote_archive_proc_folder}/{safe_cnj}_Relatorio.docx")
-                            if os.path.exists(local_pdf):
-                                nc_client.upload_file(local_pdf, f"{remote_archive_proc_folder}/{safe_cnj}_Relatorio.pdf")
+                            nc_client.upload_file(local_pdf, remote_archive_pdf)
                             total_skipped += 1
                             continue
                         except Exception as sync_err:
-                            logger.error("Erro ao restabelecer arquivos no Nextcloud para %s: %s", cnj, sync_err)
+                            logger.error("Erro ao restabelecer PDF no Nextcloud para %s: %s", cnj, sync_err)
                     else:
-                        logger.info("Processo sem alteração na API mas com cópia ausente em disco. Recriando: %s", cnj)
+                        logger.info("Processo sem alteração na API mas com PDF ausente em disco. Recriando: %s", cnj)
 
                 # Busca detalhes com publicações e andamentos atualizados
                 proc_full = item
@@ -215,11 +222,15 @@ class SyncService:
                 # Salva no banco SQLite interno
                 self.db.save_process(proc_full, pub_id=pub_id)
 
-                # Gera documentos (DOCX + PDF)
-                safe_cnj = sanitize_filename(cnj)
+                # Gera documentos (DOCX base e renderiza PDF)
                 docx_tmp, pdf_tmp = self.doc_generator.render_process_documents(proc_full, base_name=f"{safe_cnj}_Relatorio")
 
-                # Salva na cópia local e espelha no Nextcloud (Arquivo Geral + Pasta Rotativa Diária)
+                if not pdf_tmp or not os.path.exists(pdf_tmp):
+                    logger.error("Falha ao gerar PDF para o processo: %s", cnj)
+                    continue
+
+                # 1. Salva na cópia local para cada polo legítimo (Autor / Réu)
+                # Obs: se a parte tiver múltiplos processos, eles coexistem em pastas distintas por CNJ
                 parties = extract_party_names(proc_full)
                 for party in parties:
                     safe_party = sanitize_filename(party)
@@ -229,36 +240,29 @@ class SyncService:
                     local_docx = os.path.join(local_folder, f"{safe_cnj}_Relatorio.docx")
                     shutil.copy2(docx_tmp, local_docx)
 
-                    local_pdf = None
-                    if pdf_tmp and os.path.exists(pdf_tmp):
-                        local_pdf = os.path.join(local_folder, f"{safe_cnj}_Relatorio.pdf")
-                        shutil.copy2(pdf_tmp, local_pdf)
+                    local_pdf = os.path.join(local_folder, f"{safe_cnj}_Relatorio.pdf")
+                    shutil.copy2(pdf_tmp, local_pdf)
 
+                    # 2. Upload no Nextcloud: EXCLUSIVAMENTE PDF para a pasta de Arquivo Geral
+                    # Se o arquivo já existir, o WebDAV atualiza o conteúdo in-place
                     try:
-                        # 1. Envia para o Arquivo Geral permanente
-                        remote_archive = f"{archive_folder}/{safe_party}/Processo Numero {safe_cnj}"
-                        nc_client.upload_file(local_docx, f"{remote_archive}/{safe_cnj}_Relatorio.docx")
-                        if local_pdf and os.path.exists(local_pdf):
-                            nc_client.upload_file(local_pdf, f"{remote_archive}/{safe_cnj}_Relatorio.pdf")
-
-                        # 2. Envia para a Pasta Rotativa Diária (alimentando o Magic Link)
-                        remote_daily = f"{daily_folder}/{safe_party} - Processo {safe_cnj}"
-                        nc_client.upload_file(local_docx, f"{remote_daily}/{safe_cnj}_Relatorio.docx")
-                        if local_pdf and os.path.exists(local_pdf):
-                            nc_client.upload_file(local_pdf, f"{remote_daily}/{safe_cnj}_Relatorio.pdf")
+                        remote_archive_pdf = f"{archive_folder}/{safe_party}/Processo Numero {safe_cnj}/{safe_cnj}_Relatorio.pdf"
+                        nc_client.upload_file(local_pdf, remote_archive_pdf)
                     except Exception as upload_err:
-                        logger.error("Erro no espelhamento do processo %s para o Nextcloud: %s", cnj, upload_err)
-                        try:
-                            send_admin_alert(
-                                config=self.config,
-                                subject_title="Erro de Upload no Nextcloud",
-                                error_message=f"Falha ao enviar arquivos do processo {cnj} para o Nextcloud:\n{upload_err}",
-                                context_details=f"Destino remoto: {daily_folder}"
-                            )
-                        except Exception:
-                            pass
+                        logger.error("Erro no upload do PDF do processo %s para Arquivo_Geral: %s", cnj, upload_err)
 
-                # Remove temporários
+                # 3. Upload na Pasta Rotativa Diária (Magic Link do Dia):
+                # IMPORTANTE: Enviado EXATAMENTE UMA VEZ por processo (evita duplicatas na pasta do dia)
+                try:
+                    parties_label = " x ".join(parties[:2]) if len(parties) >= 2 else (parties[0] if parties else "Processo")
+                    safe_label = sanitize_filename(parties_label)
+                    daily_pdf_filename = f"{safe_cnj} - {safe_label}.pdf"
+                    remote_daily_pdf = f"{daily_folder}/{daily_pdf_filename}"
+                    nc_client.upload_file(pdf_tmp, remote_daily_pdf)
+                except Exception as upload_daily_err:
+                    logger.error("Erro no upload para pasta diária do processo %s: %s", cnj, upload_daily_err)
+
+                # Remove arquivos temporários
                 try:
                     if os.path.exists(docx_tmp):
                         os.remove(docx_tmp)
