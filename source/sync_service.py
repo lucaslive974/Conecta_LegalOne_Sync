@@ -108,13 +108,16 @@ class SyncService:
         except Exception as rot_err:
             logger.warning("Aviso na rotação de arquivos do Nextcloud: %s", rot_err)
 
-        # 4. Obtém ou cria o Magic Link público para a pasta rotativa diária
-        magic_link = None
+        # 4. Obtém ou cria os Magic Links públicos (Pasta do Dia e Arquivo Geral)
+        magic_link_daily = None
+        magic_link_archive = None
         try:
-            magic_link = nc_client.get_or_create_public_share(daily_folder)
-            logger.info("Magic Link público do Nextcloud: %s", magic_link)
+            magic_link_daily = nc_client.get_or_create_public_share(daily_folder)
+            magic_link_archive = nc_client.get_or_create_public_share(archive_folder)
+            logger.info("Magic Link (Processos do Dia): %s", magic_link_daily)
+            logger.info("Magic Link (Acervo Geral): %s", magic_link_archive)
         except Exception as link_err:
-            logger.warning("Não foi possível gerar Magic Link público: %s", link_err)
+            logger.warning("Não foi possível gerar Magic Links públicos: %s", link_err)
 
         # 5. Inicializa cliente LegalOne
         client = LegalOneClient(
@@ -296,7 +299,7 @@ class SyncService:
 
         logger.info("Sincronização concluída com sucesso! Atualizados: %s | Inalterados: %s | Total: %s", total_synced, total_skipped, total_items)
 
-        # 8. Notifica os usuários via e-mail com o Magic Link
+        # 8. Notifica os usuários via e-mail com os Magic Links (Dia e Arquivo Geral)
         try:
             logger.info("Enviando relatório diário por e-mail para: %s...", self.config.notification_emails)
             send_daily_summary(
@@ -304,7 +307,8 @@ class SyncService:
                 stats=stats,
                 updated_items=updated_processes_summary,
                 nextcloud_folder=self.config.nextcloud_remote_dir,
-                magic_link=magic_link
+                magic_link_daily=magic_link_daily,
+                magic_link_archive=magic_link_archive
             )
         except Exception as mail_err:
             logger.error("Erro ao enviar e-mail diário de resumo: %s", mail_err)
