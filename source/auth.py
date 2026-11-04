@@ -69,13 +69,16 @@ def login_legalone(email: str, password: str, access_code: str, base_url: Option
         logger.error("Falha na autenticação LegalOne: %s (Status: %s)", error_msg, res.status_code)
         raise ValueError(error_msg)
 
-    token = data.get("token") or data.get("accessToken") or data.get("access_token")
+    # Extrai o token da raiz ou do objeto 'data'
+    token = data.get("token") or (data.get("data") if isinstance(data.get("data"), dict) else {}).get("token")
     if not token and isinstance(data, dict):
-        # Caso o token venha na raiz ou em outro formato
-        for k in ("token", "jwt", "authorization"):
+        for k in ("token", "jwt", "accessToken", "access_token"):
             if k in data:
                 token = data[k]
                 break
+
+    if token and "token" not in data:
+        data["token"] = token
 
     logger.info("Autenticação com LegalOne realizada com sucesso.")
     return data
