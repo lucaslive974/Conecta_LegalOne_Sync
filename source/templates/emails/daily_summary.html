@@ -1,274 +1,179 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
 <head>
-  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Relatório Diário de Processos - LegalOne</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f1f5f9;
-      color: #1e293b;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 720px;
-      margin: 0 auto;
-      background: #ffffff;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #cbd5e1;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
-    .header {
-      background-color: #1e293b;
-      color: #ffffff;
-      padding: 24px;
-      text-align: left;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-    }
-    .header p {
-      margin: 4px 0 0 0;
-      font-size: 13px;
-      color: #94a3b8;
-    }
-    .kpi-table {
-      width: 100%;
-      border-collapse: collapse;
-      background-color: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
-    }
-    .kpi-table td {
-      width: 33.33%;
-      text-align: center;
-      padding: 16px;
-      border-right: 1px solid #e2e8f0;
-    }
-    .kpi-table td:last-child {
-      border-right: none;
-    }
-    .kpi-val-green {
-      font-size: 24px;
-      font-weight: bold;
-      color: #059669;
-    }
-    .kpi-val-gray {
-      font-size: 24px;
-      font-weight: bold;
-      color: #64748b;
-    }
-    .kpi-val-blue {
-      font-size: 24px;
-      font-weight: bold;
-      color: #2563eb;
-    }
-    .kpi-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      color: #64748b;
-      font-weight: bold;
-      margin-top: 2px;
-    }
-    .content {
-      padding: 24px;
-    }
-    .magic-link-box {
-      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-      color: #ffffff;
-      padding: 20px;
-      border-radius: 8px;
-      text-align: center;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.3);
-    }
-    .magic-link-title {
-      font-size: 16px;
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
-    .magic-link-desc {
-      font-size: 13px;
-      opacity: 0.9;
-      margin: 0 0 16px 0;
-      line-height: 1.4;
-    }
-    .magic-btn {
-      display: inline-block;
-      background-color: #ffffff;
-      color: #1e3a8a !important;
-      font-size: 13px;
-      font-weight: 700;
-      text-decoration: none;
-      padding: 12px 24px;
-      border-radius: 6px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      transition: background-color 0.2s;
-    }
-    .archive-box {
-      background-color: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
-    }
-    .archive-title {
-      font-size: 14px;
-      font-weight: 700;
-      color: #1e293b;
-      margin-bottom: 4px;
-    }
-    .archive-desc {
-      font-size: 12px;
-      color: #64748b;
-      margin: 0 0 12px 0;
-      line-height: 1.4;
-    }
-    .archive-btn {
-      display: inline-block;
-      background-color: #0f172a;
-      color: #ffffff !important;
-      font-size: 12px;
-      font-weight: 600;
-      text-decoration: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-    .section-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #0f172a;
-      margin: 16px 0 10px 0;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 6px;
-    }
-    .table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 8px;
-    }
-    .table th {
-      background-color: #f1f5f9;
-      color: #475569;
-      font-size: 11px;
-      text-transform: uppercase;
-      text-align: left;
-      padding: 8px 10px;
-    }
-    .table td {
-      padding: 10px;
-      font-size: 12px;
-      border-bottom: 1px solid #e2e8f0;
-      vertical-align: top;
-    }
-    .cnj-cell {
-      font-weight: bold;
-      color: #1e293b;
-      font-size: 13px;
-    }
-    .parties-cell {
-      color: #475569;
-    }
-    .desc-cell {
-      color: #334155;
-    }
-    .footer {
-      background-color: #f8fafc;
-      padding: 16px 24px;
-      font-size: 12px;
-      color: #94a3b8;
-      text-align: center;
-      border-top: 1px solid #e2e8f0;
-    }
-  </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>⚖️ Relatório Diário de Processos - LegalOne</h1>
-      <p>Sincronização concluída com sucesso em {{ now_str }}</p>
-    </div>
+<body style="margin: 0; padding: 30px 10px; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1d1d1f;">
 
-    <table class="kpi-table">
-      <tr>
-        <td>
-          <div class="kpi-val-green">{{ stats.synced }}</div>
-          <div class="kpi-label">Atualizados / Novos</div>
-        </td>
-        <td>
-          <div class="kpi-val-gray">{{ stats.skipped }}</div>
-          <div class="kpi-label">Inalterados</div>
-        </td>
-        <td>
-          <div class="kpi-val-blue">{{ stats.total }}</div>
-          <div class="kpi-label">Total Geral</div>
-        </td>
-      </tr>
-    </table>
-
-    <div class="content">
-      <!-- 1. Magic Link dos Processos do Dia -->
-      {% if magic_link_daily %}
-      <div class="magic-link-box">
-        <div class="magic-link-title">⚡ Acesso Direto aos Processos do Dia</div>
-        <p class="magic-link-desc">
-          Os relatórios estruturados em <strong>DOCX</strong> e <strong>PDF</strong> dos processos atualizados nesta data estão reunidos na pasta do dia. Acesse sem necessidade de login pelo link abaixo:
+  <!-- Container Central Apple Style -->
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 680px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5ea; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);">
+    
+    <!-- Cabeçalho Minimalista Monocromático -->
+    <tr>
+      <td style="padding: 36px 36px 20px 36px; background-color: #ffffff; border-bottom: 1px solid #f2f2f7;">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: #86868b; margin-bottom: 6px;">
+          CONECTA LEGALONE &bull; SINCRONIZAÇÃO DIÁRIA
+        </div>
+        <h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; line-height: 1.2;">
+          Processos Atualizados
+        </h1>
+        <p style="margin: 6px 0 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">
+          Relatório matinal gerado automaticamente em {{ now_str }}
         </p>
-        <a href="{{ magic_link_daily }}" class="magic-btn" target="_blank">
-          📥 Abrir Pasta de Processos do Dia
-        </a>
-      </div>
-      {% endif %}
+      </td>
+    </tr>
 
-      <!-- 2. Magic Link do Arquivo Geral Completo -->
-      {% if magic_link_archive %}
-      <div class="archive-box">
-        <div class="archive-title">🗄️ Acervo Geral Completo (Todos os Processos)</div>
-        <p class="archive-desc">
-          Deseja consultar todos os processos históricos organizados por partes (Autores e Réus)? Acesse o acervo completo permanente no Nextcloud:
-        </p>
-        <a href="{{ magic_link_archive }}" class="archive-btn" target="_blank">
-          📂 Abrir Acervo Geral Completo no Nextcloud
-        </a>
-      </div>
-      {% endif %}
-
-      <div class="section-title">Últimos Andamentos & Processos Atualizados</div>
-      <table class="table">
-        <thead>
+    <!-- Seção de KPIs (3 Boxes em Cinza Minimalista) -->
+    <tr>
+      <td style="padding: 24px 36px; background-color: #ffffff;">
+        <table border="0" cellpadding="0" cellspacing="8" width="100%" style="width: 100%;">
           <tr>
-            <th style="width: 30%;">Processo (CNJ)</th>
-            <th style="width: 30%;">Partes</th>
-            <th style="width: 40%;">Último Andamento / Publicação</th>
+            <td width="33%" align="center" style="background-color: #f5f5f7; padding: 18px 10px; border-radius: 12px;">
+              <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; line-height: 1;">
+                {{ stats.synced }}
+              </div>
+              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #86868b; margin-top: 6px;">
+                Atualizados / Novos
+              </div>
+            </td>
+            <td width="33%" align="center" style="background-color: #f5f5f7; padding: 18px 10px; border-radius: 12px;">
+              <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.5px; color: #86868b; line-height: 1;">
+                {{ stats.skipped }}
+              </div>
+              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #86868b; margin-top: 6px;">
+                Inalterados
+              </div>
+            </td>
+            <td width="33%" align="center" style="background-color: #f5f5f7; padding: 18px 10px; border-radius: 12px;">
+              <div style="font-size: 30px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; line-height: 1;">
+                {{ stats.total }}
+              </div>
+              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: #86868b; margin-top: 6px;">
+                Total no Sistema
+              </div>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% if updated_items %}
-            {% for item in updated_items[:40] %}
-            <tr>
-              <td class="cnj-cell">{{ item.cnj }}</td>
-              <td class="parties-cell">{{ item.partes }}</td>
-              <td class="desc-cell">{{ item.ultimo_andamento }}</td>
-            </tr>
-            {% endfor %}
-          {% else %}
-            <tr>
-              <td colspan="3" style="text-align: center; color: #64748b; padding: 18px;">
-                Nenhum processo sofreu alteração desde a última sincronização.
-              </td>
-            </tr>
-          {% endif %}
-        </tbody>
-      </table>
-    </div>
+        </table>
+      </td>
+    </tr>
 
-    <div class="footer">
-      Conecta LegalOne Sync Automatizado • Gerado às {{ now_str }}
-    </div>
-  </div>
+    <!-- Card 1: Magic Link do Dia (Dark Apple Box) -->
+    {% if magic_link_daily %}
+    <tr>
+      <td style="padding: 0 36px 16px 36px; background-color: #ffffff;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #1d1d1f; border-radius: 14px; padding: 24px; text-align: left;">
+          <tr>
+            <td>
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #a1a1a6; margin-bottom: 4px;">
+                PASTA ROTATIVA DO DIA
+              </div>
+              <div style="font-size: 16px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px; margin-bottom: 6px;">
+                Relatórios em PDF Prontos para Acesso
+              </div>
+              <p style="margin: 0 0 18px 0; font-size: 13px; color: #a1a1a6; line-height: 1.45;">
+                Os processos atualizados nesta rodada foram renderizados e estão disponíveis diretamente na nuvem privada, sem necessidade de login.
+              </p>
+              <div>
+                <a href="{{ magic_link_daily }}" target="_blank" style="display: inline-block; background-color: #ffffff; color: #1d1d1f !important; font-size: 13px; font-weight: 600; text-decoration: none; padding: 11px 24px; border-radius: 980px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);">
+                  Abrir Processos de Hoje no Nextcloud &rarr;
+                </a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    {% endif %}
+
+    <!-- Card 2: Magic Link do Acervo Geral (Light Box) -->
+    {% if magic_link_archive %}
+    <tr>
+      <td style="padding: 0 36px 24px 36px; background-color: #ffffff;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f5f5f7; border: 1px solid #e5e5ea; border-radius: 14px; padding: 18px 22px;">
+          <tr>
+            <td>
+              <div style="font-size: 14px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.2px; margin-bottom: 4px;">
+                Acervo Geral Permanente
+              </div>
+              <p style="margin: 0 0 12px 0; font-size: 12px; color: #6e6e73; line-height: 1.4;">
+                Deseja consultar todos os processos históricos organizados diretamente pelas partes (Autores e Réus)?
+              </p>
+              <div>
+                <a href="{{ magic_link_archive }}" target="_blank" style="display: inline-block; background-color: #ffffff; color: #1d1d1f !important; font-size: 12px; font-weight: 600; text-decoration: none; padding: 8px 18px; border-radius: 980px; border: 1px solid #d2d2d7;">
+                  Acessar Acervo Completo &rarr;
+                </a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    {% endif %}
+
+    <!-- Relação de Processos e Andamentos -->
+    <tr>
+      <td style="padding: 0 36px 36px 36px; background-color: #ffffff;">
+        <div style="font-size: 15px; font-weight: 700; color: #1d1d1f; letter-spacing: -0.3px; padding-bottom: 10px; border-bottom: 1px solid #1d1d1f;">
+          Últimos Andamentos &bull; Detalhamento
+        </div>
+
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="width: 100%; border-collapse: collapse; margin-top: 4px;">
+          <thead>
+            <tr>
+              <th align="left" style="padding: 12px 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #86868b; border-bottom: 1px solid #e5e5ea; width: 32%;">
+                Processo (CNJ)
+              </th>
+              <th align="left" style="padding: 12px 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #86868b; border-bottom: 1px solid #e5e5ea; width: 30%;">
+                Partes
+              </th>
+              <th align="left" style="padding: 12px 8px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #86868b; border-bottom: 1px solid #e5e5ea; width: 38%;">
+                Última Publicação
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if updated_items %}
+              {% for item in updated_items[:40] %}
+              <tr>
+                <td align="left" style="padding: 14px 8px; font-size: 12px; font-weight: 700; color: #1d1d1f !important; border-bottom: 1px solid #f2f2f7; vertical-align: top; font-family: 'SF Mono', Consolas, monospace;">
+                  {{ item.cnj }}
+                </td>
+                <td align="left" style="padding: 14px 8px; font-size: 12px; color: #424245 !important; border-bottom: 1px solid #f2f2f7; vertical-align: top; line-height: 1.4;">
+                  {{ item.partes }}
+                </td>
+                <td align="left" style="padding: 14px 8px; font-size: 12px; color: #1d1d1f !important; border-bottom: 1px solid #f2f2f7; vertical-align: top; line-height: 1.45;">
+                  {{ item.ultimo_andamento }}
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="3" align="center" style="padding: 30px 10px; font-size: 13px; color: #86868b !important;">
+                  Nenhum processo sofreu alteração nesta rodada de sincronização.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Rodapé Minimalista Apple Style -->
+    <tr>
+      <td align="center" style="padding: 24px 36px 30px 36px; background-color: #f5f5f7; border-top: 1px solid #e5e5ea;">
+        <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #86868b; margin-bottom: 4px;">
+          CONECTA LEGALONE SYNC &bull; DEPARTAMENTO JURÍDICO &bull; TI
+        </div>
+        <p style="margin: 0; font-size: 11px; color: #86868b; line-height: 1.4;">
+          Conecta LegalOne Automated Sync &bull; Documento corporativo confidencial.<br />
+          Sincronizado e espelhado via WebDAV em <code>{{ nextcloud_folder }}</code>.
+        </p>
+      </td>
+    </tr>
+
+  </table>
+
 </body>
 </html>

@@ -1,114 +1,97 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="pt-BR">
 <head>
-  <meta charset="utf-8">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{{ subject_title }}</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f8fafc;
-      color: #1e293b;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      background: #ffffff;
-      border-radius: 8px;
-      overflow: hidden;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    .header {
-      background-color: #dc2626;
-      color: #ffffff;
-      padding: 20px 24px;
-    }
-    .header h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 700;
-    }
-    .header p {
-      margin: 4px 0 0 0;
-      font-size: 13px;
-      opacity: 0.9;
-    }
-    .content {
-      padding: 24px;
-    }
-    .error-box {
-      background-color: #fef2f2;
-      border-left: 4px solid #dc2626;
-      padding: 14px;
-      margin: 16px 0;
-      border-radius: 4px;
-      font-family: 'Consolas', monospace;
-      font-size: 13px;
-      color: #991b1b;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-    .meta-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-      font-size: 13px;
-    }
-    .meta-table td {
-      padding: 8px 0;
-      border-bottom: 1px solid #f1f5f9;
-    }
-    .meta-label {
-      color: #64748b;
-      font-weight: 600;
-      width: 35%;
-    }
-    .footer {
-      background-color: #f8fafc;
-      padding: 16px 24px;
-      font-size: 12px;
-      color: #94a3b8;
-      text-align: center;
-      border-top: 1px solid #e2e8f0;
-    }
-  </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h2>Falha na Rotina de Sincronização</h2>
-      <p>Ocorrência em: {{ now_str }}</p>
-    </div>
-    <div class="content">
-      <p>Prezado Administrador,</p>
-      <p>A sincronização do <strong>Conecta LegalOne</strong> encontrou um problema crítico e necessita de atenção.</p>
-      
-      <div class="error-box"><strong>Detalhes do Erro:</strong><br>{{ error_message }}</div>
-      
-      {% if context_details %}
-      <p><strong>Contexto Adicional:</strong><br>{{ context_details }}</p>
-      {% endif %}
+<body style="margin: 0; padding: 30px 10px; background-color: #f5f5f7; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; color: #1d1d1f;">
 
-      <table class="meta-table">
-        <tr>
-          <td class="meta-label">Módulo Afetado:</td>
-          <td>{{ subject_title }}</td>
-        </tr>
-        <tr>
-          <td class="meta-label">Data/Hora:</td>
-          <td>{{ now_str }}</td>
-        </tr>
-        <tr>
-          <td class="meta-label">Ação Recomendada:</td>
-          <td>Verifique as credenciais no arquivo <code>.env</code> ou a disponibilidade do serviço afetado.</td>
-        </tr>
-      </table>
-    </div>
-    <div class="footer">
-      Sistema Automatizado Conecta LegalOne Sync • Notificação de Emergência
-    </div>
-  </div>
+  <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 620px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e5ea; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);">
+    
+    <!-- Header -->
+    <tr>
+      <td style="padding: 36px 36px 20px 36px; background-color: #ffffff; border-bottom: 1px solid #f2f2f7;">
+        <div style="display: inline-block; background-color: #fef2f2; color: #b91c1c; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 12px; border-radius: 980px; margin-bottom: 12px;">
+          &bull; Incidente Operacional
+        </div>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; line-height: 1.2;">
+          Falha na Rotina de Sincronização
+        </h1>
+        <p style="margin: 6px 0 0 0; font-size: 13px; color: #86868b; line-height: 1.4;">
+          Ocorrência detectada em {{ now_str }}
+        </p>
+      </td>
+    </tr>
+
+    <!-- Content -->
+    <tr>
+      <td style="padding: 28px 36px 36px 36px; background-color: #ffffff;">
+        <p style="margin: 0 0 16px 0; font-size: 14px; color: #1d1d1f; line-height: 1.5;">
+          Prezado Administrador,
+        </p>
+        <p style="margin: 0 0 16px 0; font-size: 13px; color: #424245; line-height: 1.5;">
+          A rotina de sincronização do <strong>Conecta LegalOne</strong> foi interrompida devido a uma falha crítica que requer atenção imediata.
+        </p>
+
+        <!-- Error Card Monocromático -->
+        <div style="background-color: #f5f5f7; border-left: 4px solid #1d1d1f; border-radius: 4px; padding: 16px; margin: 18px 0;">
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #86868b; margin-bottom: 6px;">
+            Diagnóstico do Erro
+          </div>
+          <div style="font-family: 'SF Mono', Consolas, monospace; font-size: 13px; color: #1d1d1f; line-height: 1.45; word-break: break-word;">
+            {{ error_message }}
+          </div>
+        </div>
+
+        {% if context_details %}
+        <p style="margin: 16px 0 20px 0; font-size: 13px; color: #6e6e73; line-height: 1.5;">
+          <strong style="color: #1d1d1f;">Contexto Operacional:</strong><br />
+          {{ context_details }}
+        </p>
+        {% endif %}
+
+        <!-- Detalhes do Incidente -->
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; margin-top: 20px; font-size: 13px;">
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; width: 35%; font-weight: 600;">
+              Módulo Afetado
+            </td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f; font-weight: 600;">
+              {{ subject_title }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; font-weight: 600;">
+              Horário do Evento
+            </td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f;">
+              {{ now_str }}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #86868b; font-weight: 600;">
+              Ação Sugerida
+            </td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #f2f2f7; color: #1d1d1f;">
+              Verifique as credenciais no arquivo <code>.env</code> ou a disponibilidade do serviço afetado.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+
+    <!-- Footer -->
+    <tr>
+      <td align="center" style="padding: 20px 36px 26px 36px; background-color: #f5f5f7; border-top: 1px solid #e5e5ea;">
+        <p style="margin: 0; font-size: 11px; color: #86868b; line-height: 1.4;">
+          Sistema de Monitoramento LegalOne &bull; Notificação de Emergência Automática<br />
+          Conecta LegalOne Sync &bull; Tecnologia da Informação
+        </p>
+      </td>
+    </tr>
+
+  </table>
+
 </body>
 </html>
