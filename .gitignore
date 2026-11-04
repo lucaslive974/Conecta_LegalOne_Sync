@@ -1,0 +1,22 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Pastas de trabalho e dados locais
+temp/*
+!temp/.gitkeep
+storage/*
+!storage/.gitkeep
+data/*.db
+data/*.db-journal
+!data/.gitkeep
+
+# Arquivos sensíveis ou temporários
+sessao_token.txt
+config_usuario.json
+.DS_Store

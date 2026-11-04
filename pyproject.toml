@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "conecta-legalone-sync"
+version = "2.0.0"
+description = "Sincronizador corporativo de processos Conecta LegalOne com relatórios DOCX/PDF, espelhamento Nextcloud e alertas SMTP"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+    "python-docx>=1.1.0",
+    "apscheduler>=3.10.4",
+    "python-dotenv>=1.0.1",
+    "jinja2>=3.1.3",
+    "pytz>=2024.1",
+]
+
+[project.scripts]
+legalone-sync = "source.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["source*"]

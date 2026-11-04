@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  legalone-sync:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: legalone-sync:latest
+    container_name: legalone-sync
+    env_file:
+      - .env
+    volumes:
+      # Mantém o histórico do banco SQLite persistente no host
+      - ./data:/app/data
+      # Mantém a cópia local dos documentos DOCX e PDF gerados
+      - ./storage:/app/storage
+      # Diretório temporário
+      - ./temp:/app/temp
+    restart: "no"

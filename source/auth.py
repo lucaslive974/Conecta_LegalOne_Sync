@@ -1,0 +1,81 @@
+import base64
+import json
+import logging
+import requests
+from typing import Dict, Any, Optional
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_LOGIN_URL = "https://conecta-api.legalone.com.br/api/auth/login"
+
+
+def extract_tenant_id_from_jwt(token: str) -> Optional[str]:
+    """Extrai automaticamente o tenantId do payload do JWT Bearer."""
+    try:
+        clean = token.strip()
+        if clean.lower().startswith("bearer "):
+            clean = clean[7:].strip()
+        parts = clean.split(".")
+        if len(parts) >= 2:
+            padding = 4 - (len(parts[1]) % 4)
+            if padding and padding != 4:
+                parts[1] += "=" * padding
+            decoded = base64.b64decode(parts[1]).decode("utf-8")
+            data = json.loads(decoded)
+            tenant = data.get("tenantId")
+            if tenant:
+                return str(tenant)
+    except Exception as e:
+        logger.debug("Falha ao extrair tenantId do JWT: %s", e)
+    return None
+
+
+def login_legalone(email: str, password: str, access_code: str, base_url: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Realiza o login na API Conecta LegalOne.
+    
+    Header esperado: Authorization: Basic <base64(email:password)>
+    Body JSON: {"accessCode": "<código de acesso>"}
+    """
+    user_pass = f"{email.strip()}:{password}".encode("utf-8")
+    basic_token = base64.b64encode(user_pass).decode("utf-8")
+
+    login_url = f"{base_url.rstrip('/')}/api/auth/login" if base_url else DEFAULT_LOGIN_URL
+
+    headers = {
+        "Authorization": f"Basic {basic_token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/plain, */*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+    }
+
+    payload = {
+        "accessCode": access_code.strip()
+    }
+
+    try:
+        res = requests.post(login_url, headers=headers, json=payload, timeout=25)
+    except requests.RequestException as exc:
+        logger.error("Erro de conexão ao tentar autenticar no LegalOne: %s", exc)
+        raise ConnectionError(f"Falha de rede ao acessar LegalOne: {exc}") from exc
+
+    try:
+        data = res.json() if res.content else {}
+    except Exception:
+        data = {}
+
+    if res.status_code != 200:
+        error_msg = data.get("message") or data.get("error") or f"Erro HTTP {res.status_code} na autenticação LegalOne."
+        logger.error("Falha na autenticação LegalOne: %s (Status: %s)", error_msg, res.status_code)
+        raise ValueError(error_msg)
+
+    token = data.get("token") or data.get("accessToken") or data.get("access_token")
+    if not token and isinstance(data, dict):
+        # Caso o token venha na raiz ou em outro formato
+        for k in ("token", "jwt", "authorization"):
+            if k in data:
+                token = data[k]
+                break
+
+    logger.info("Autenticação com LegalOne realizada com sucesso.")
+    return data
