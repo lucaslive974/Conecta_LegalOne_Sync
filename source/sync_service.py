@@ -6,6 +6,7 @@ from typing import Any
 
 from source.auth import login_legalone
 from source.client import LegalOneClient
+from source.cnj_parser import parse_cnj
 from source.config import AppConfig
 from source.database import Database
 from source.document_generator import DocumentGenerator, sanitize_filename
@@ -281,8 +282,10 @@ class SyncService:
                     desc = (last_a.get("descricao") or "")[:140]
                     ultimo_txt = f"[{d} - {orig}] {desc}..."
 
+                cnj_info = parse_cnj(cnj)
                 updated_processes_summary.append({
                     "cnj": cnj,
+                    "tribunal": cnj_info["tribunal_sigla"] if cnj_info["is_valid"] else "",
                     "partes": ", ".join(parties[:2]),
                     "ultimo_andamento": ultimo_txt
                 })

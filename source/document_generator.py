@@ -12,6 +12,8 @@ from docx.oxml import parse_xml
 from docx.oxml.ns import nsdecls
 from docx.shared import Inches, Pt, RGBColor
 
+from source.cnj_parser import parse_cnj
+
 logger = logging.getLogger(__name__)
 
 # Apple-style monochromatic palette
@@ -116,10 +118,16 @@ class DocumentGenerator:
         run_title.font.bold = True
         run_title.font.color.rgb = COLOR_BLACK
 
+        # Subtitle: Folder + Tribunal / Year + Issue timestamp
+        cnj_info = parse_cnj(cnj)
         p_sub = doc.add_paragraph()
         p_sub.paragraph_format.space_before = Pt(0)
         p_sub.paragraph_format.space_after = Pt(12)
-        run_sub = p_sub.add_run(f"Pasta: {pasta}  •  Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}")
+        if cnj_info["is_valid"]:
+            sub_meta = f"Pasta: {pasta}  •  {cnj_info['tribunal_sigla']} ({cnj_info['ano']})  •  Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+        else:
+            sub_meta = f"Pasta: {pasta}  •  Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+        run_sub = p_sub.add_run(sub_meta)
         run_sub.font.name = "Segoe UI"
         run_sub.font.size = Pt(9.5)
         run_sub.font.color.rgb = COLOR_MUTED
@@ -141,7 +149,21 @@ class DocumentGenerator:
             r.font.bold = True
             r.font.color.rgb = COLOR_BLACK
 
-        table_meta = doc.add_table(rows=3, cols=4)
+        tribunal_display = (
+            f"{cnj_info['tribunal_sigla']} - {cnj_info['tribunal_nome']}"
+            if cnj_info["is_valid"]
+            else cnj_info["tribunal_nome"]
+        )
+
+        meta_fields = [
+            ("Número CNJ", cnj, "ID Conecta", str(p_id)),
+            ("Tribunal Competente", tribunal_display, "Esfera / Ramo", cnj_info["ramo"]),
+            ("Ano de Distribuição", cnj_info["ano"], "Status", status_nome),
+            ("Valor da Causa", valor_str, "Pasta", pasta),
+            ("Cód. Comarca / Foro", cnj_info["origem_codigo"], "Última Atualização", str(dt_atualizacao)),
+        ]
+
+        table_meta = doc.add_table(rows=len(meta_fields), cols=4)
         table_meta.alignment = WD_TABLE_ALIGNMENT.CENTER
         table_meta.autofit = False
         set_table_borders(table_meta, color=HEX_BORDER)
@@ -150,12 +172,6 @@ class DocumentGenerator:
         for row in table_meta.rows:
             for idx, width in enumerate(col_widths):
                 row.cells[idx].width = width
-
-        meta_fields = [
-            ("Número CNJ", cnj, "ID Conecta", str(p_id)),
-            ("Pasta", pasta, "Status", status_nome),
-            ("Valor da Causa", valor_str, "Última Atualização", str(dt_atualizacao))
-        ]
 
         for r_idx, (k1, v1, k2, v2) in enumerate(meta_fields):
             row = table_meta.rows[r_idx]
