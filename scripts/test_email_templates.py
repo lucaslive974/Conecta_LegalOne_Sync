@@ -31,22 +31,22 @@ def get_mock_data():
     mock_items = [
         {
             "cnj": "0000001-00.2026.8.00.0000",
-            "partes": "Empresa Exemplo S.A. vs Estado de Minas Gerais",
+            "partes": "Empresa Exemplo S.A. vs Estado Exemplo",
             "ultimo_andamento": f"[{now_str.split(' às ')[0]} - Diário Oficial] Publicação de despacho saneador deferindo prova pericial requerida pelas partes..."
         },
         {
             "cnj": "0000002-00.2026.5.00.0000",
-            "partes": "Sindicato dos Trabalhadores vs Empresa Exemplo S.A.",
+            "partes": "Sindicato Exemplo vs Empresa Exemplo S.A.",
             "ultimo_andamento": f"[{now_str.split(' às ')[0]} - PJe / JT] Conclusos os autos para prolação de sentença pelo magistrado titular..."
         },
         {
             "cnj": "0000003-00.2026.8.00.0000",
-            "partes": "Seguradora Líder vs Empresa Exemplo S.A.",
+            "partes": "Seguradora Exemplo vs Empresa Exemplo S.A.",
             "ultimo_andamento": f"[{now_str.split(' às ')[0]} - Sistema Judicial] Juntada de petição de acordo com quitação integral de verba indenizatória..."
         }
     ]
-    magic_link_daily = "https://arquivos.empresaexemplo.com.br/s/DEMO_MAGIC_LINK_1"
-    magic_link_archive = "https://arquivos.empresaexemplo.com.br/s/DEMO_MAGIC_LINK_2"
+    magic_link_daily = "https://cloud.empresaexemplo.com.br/s/DEMO_MAGIC_LINK_1"
+    magic_link_archive = "https://cloud.empresaexemplo.com.br/s/DEMO_MAGIC_LINK_2"
     return now_str, mock_stats, mock_items, magic_link_daily, magic_link_archive
 
 
