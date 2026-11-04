@@ -76,14 +76,46 @@
     .content {
       padding: 24px;
     }
+    .magic-link-box {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.3);
+    }
+    .magic-link-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .magic-link-desc {
+      font-size: 13px;
+      opacity: 0.9;
+      margin: 0 0 16px 0;
+      line-height: 1.4;
+    }
+    .magic-btn {
+      display: inline-block;
+      background-color: #ffffff;
+      color: #1e3a8a !important;
+      font-size: 13px;
+      font-weight: 700;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: background-color 0.2s;
+    }
     .alert-info {
-      background-color: #eff6ff;
-      border-left: 4px solid #2563eb;
-      padding: 12px;
+      background-color: #f8fafc;
+      border-left: 4px solid #64748b;
+      padding: 12px 14px;
       margin: 0 0 20px 0;
       border-radius: 4px;
-      font-size: 13px;
-      color: #1e40af;
+      font-size: 12px;
+      color: #475569;
       line-height: 1.5;
     }
     .section-title {
@@ -159,8 +191,20 @@
     </table>
 
     <div class="content">
+      {% if magic_link %}
+      <div class="magic-link-box">
+        <div class="magic-link-title">📁 Acesso Direto aos Processos do Dia</div>
+        <p class="magic-link-desc">
+          Os relatórios estruturados em <strong>DOCX</strong> e <strong>PDF</strong> dos processos atualizados nesta rodada já estão prontos na pasta rotativa do Nextcloud. Acesse sem necessidade de login pelo link abaixo:
+        </p>
+        <a href="{{ magic_link }}" class="magic-btn" target="_blank">
+          📥 Abrir Pasta de Processos no Nextcloud
+        </a>
+      </div>
+      {% endif %}
+
       <div class="alert-info">
-        📁 <strong>Documentos Atualizados:</strong> Os relatórios <strong>DOCX estruturados</strong> e renderizações em <strong>PDF</strong> foram gerados, salvos na cópia local e espelhados na pasta remota do Nextcloud: <code>{{ nextcloud_folder }}</code>.
+        🗄️ <strong>Arquivo Permanente:</strong> Todos os processos e andamentos anteriores são arquivados e mantidos em segurança na pasta geral: <code>{{ nextcloud_folder }}/Arquivo_Geral</code> e na cópia local em disco.
       </div>
 
       <div class="section-title">Últimos Andamentos & Processos Atualizados</div>

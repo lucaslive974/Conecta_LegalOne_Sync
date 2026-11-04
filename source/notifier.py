@@ -115,10 +115,12 @@ def send_daily_summary(
     config: AppConfig,
     stats: Dict[str, Any],
     updated_items: List[Dict[str, Any]],
-    nextcloud_folder: str
+    nextcloud_folder: str,
+    magic_link: Optional[str] = None
 ):
     """
-    Renderiza o template daily_summary.html e envia relatório executivo aos destinatários.
+    Renderiza o template daily_summary.html e envia relatório executivo aos destinatários
+    com o Magic Link público para acesso direto aos arquivos do dia.
     """
     recipients = config.notification_emails
     if not recipients:
@@ -133,7 +135,8 @@ def send_daily_summary(
         now_str=now_str,
         stats=stats,
         updated_items=updated_items,
-        nextcloud_folder=nextcloud_folder
+        nextcloud_folder=nextcloud_folder,
+        magic_link=magic_link
     )
 
     date_label = now_str.split(" às ")[0]

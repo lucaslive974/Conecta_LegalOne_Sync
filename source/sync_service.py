@@ -48,11 +48,13 @@ class SyncService:
         """
         Executa o fluxo completo diário:
         1. Login no LegalOne (com alerta em caso de falha)
-        2. Validação da conexão com Nextcloud (com alerta em caso de falha)
-        3. Varredura incremental dos processos
-        4. Geração de DOCX + PDF
-        5. Salvamento na cópia local e espelhamento no Nextcloud
-        6. Envio de e-mail com relatório diário para a lista de usuários
+        2. Inicialização do Nextcloud (preparação de pastas rotativas e arquivo permanente)
+        3. Rotação diária: Move itens anteriores de 'Novos_e_Atualizados' para 'Arquivo_Geral'
+        4. Geração/Obtenção do Magic Link público para a pasta rotativa do dia
+        5. Varredura incremental dos processos
+        6. Geração de DOCX + PDF
+        7. Salvamento na cópia local e upload para Arquivo Geral + Pasta do Dia
+        8. Envio de e-mail com relatório diário e Magic Link público
         """
         logger.info("==================================================")
         logger.info("Iniciando rotina de sincronização Conecta LegalOne")
@@ -85,32 +87,36 @@ class SyncService:
                 logger.error("Falha secundária ao enviar e-mail de alerta: %s", mail_err)
             raise
 
-        # 2. Conexão Nextcloud
-        nc_client: Optional[NextcloudClient] = None
-        try:
-            logger.info("Conectando ao Nextcloud em %s (usuário: %s)...", self.config.nextcloud_url, self.config.nextcloud_user)
-            nc_client = NextcloudClient(
-                base_url=self.config.nextcloud_url,
-                user=self.config.nextcloud_user,
-                password=self.config.nextcloud_password,
-                verify_ssl=self.config.nextcloud_verify_ssl
-            )
-            nc_client.test_connection()
-        except Exception as e:
-            err_msg = f"Falha na comunicação com o Nextcloud:\n{str(e)}"
-            logger.error(err_msg)
-            try:
-                send_admin_alert(
-                    config=self.config,
-                    subject_title="Falha no Nextcloud",
-                    error_message=str(e),
-                    context_details="Não foi possível autenticar ou acessar a URL WebDAV do Nextcloud. Verifique o servidor interno e credenciais de aplicativo."
-                )
-            except Exception as mail_err:
-                logger.error("Falha secundária ao enviar e-mail de alerta: %s", mail_err)
-            raise
+        # 2. Inicialização Nextcloud
+        nc_client = NextcloudClient(
+            base_url=self.config.nextcloud_url,
+            user=self.config.nextcloud_user,
+            password=self.config.nextcloud_password,
+            verify_ssl=self.config.nextcloud_verify_ssl
+        )
 
-        # 3. Inicializa cliente LegalOne
+        daily_folder = f"{self.config.nextcloud_remote_dir}/Novos_e_Atualizados"
+        archive_folder = f"{self.config.nextcloud_remote_dir}/Arquivo_Geral"
+
+        nc_client.ensure_directory(daily_folder)
+        nc_client.ensure_directory(archive_folder)
+
+        # 3. Rotação: arquiva os itens da execução anterior e limpa a pasta rotativa
+        logger.info("Verificando rotação da pasta diária '%s'...", daily_folder)
+        try:
+            nc_client.archive_previous_daily_updates(daily_folder, archive_folder)
+        except Exception as rot_err:
+            logger.warning("Aviso na rotação de arquivos do Nextcloud: %s", rot_err)
+
+        # 4. Obtém ou cria o Magic Link público para a pasta rotativa diária
+        magic_link = None
+        try:
+            magic_link = nc_client.get_or_create_public_share(daily_folder)
+            logger.info("Magic Link público do Nextcloud: %s", magic_link)
+        except Exception as link_err:
+            logger.warning("Não foi possível gerar Magic Link público: %s", link_err)
+
+        # 5. Inicializa cliente LegalOne
         client = LegalOneClient(
             token=token,
             tenant_id=self.config.legalone_tenant_id,
@@ -164,17 +170,17 @@ class SyncService:
                     is_changed = False
 
                 if not is_changed:
-                    # Verifica integridade da cópia local e da pasta no Nextcloud
+                    # Verifica integridade da cópia local e do arquivo permanente no Nextcloud
                     safe_cnj = sanitize_filename(cnj)
                     parties = extract_party_names(item)
                     first_party = sanitize_filename(parties[0])
                     local_proc_folder = os.path.join(self.local_storage_dir, first_party, f"Processo Numero {safe_cnj}")
                     local_docx = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.docx")
                     local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
-                    remote_folder = f"{self.config.nextcloud_remote_dir}/{first_party}/Processo Numero {safe_cnj}"
+                    remote_archive_proc_folder = f"{archive_folder}/{first_party}/Processo Numero {safe_cnj}"
 
                     local_ok = os.path.exists(local_docx) and os.path.exists(local_pdf)
-                    remote_ok = nc_client.exists(remote_folder) if local_ok else False
+                    remote_ok = nc_client.exists(remote_archive_proc_folder) if local_ok else False
 
                     if local_ok and remote_ok:
                         total_skipped += 1
@@ -183,9 +189,9 @@ class SyncService:
                     elif local_ok and not remote_ok:
                         logger.info("Detectada remoção remota no Nextcloud para o processo %s. Reenviando cópia local...", cnj)
                         try:
-                            nc_client.upload_file(local_docx, f"{remote_folder}/{safe_cnj}_Relatorio.docx")
+                            nc_client.upload_file(local_docx, f"{remote_archive_proc_folder}/{safe_cnj}_Relatorio.docx")
                             if os.path.exists(local_pdf):
-                                nc_client.upload_file(local_pdf, f"{remote_folder}/{safe_cnj}_Relatorio.pdf")
+                                nc_client.upload_file(local_pdf, f"{remote_archive_proc_folder}/{safe_cnj}_Relatorio.pdf")
                             total_skipped += 1
                             continue
                         except Exception as sync_err:
@@ -210,7 +216,7 @@ class SyncService:
                 safe_cnj = sanitize_filename(cnj)
                 docx_tmp, pdf_tmp = self.doc_generator.render_process_documents(proc_full, base_name=f"{safe_cnj}_Relatorio")
 
-                # Salva na cópia local e faz upload/espelhamento para o Nextcloud
+                # Salva na cópia local e espelha no Nextcloud (Arquivo Geral + Pasta Rotativa Diária)
                 parties = extract_party_names(proc_full)
                 for party in parties:
                     safe_party = sanitize_filename(party)
@@ -225,12 +231,18 @@ class SyncService:
                         local_pdf = os.path.join(local_folder, f"{safe_cnj}_Relatorio.pdf")
                         shutil.copy2(pdf_tmp, local_pdf)
 
-                    # Espelhamento para o Nextcloud
-                    remote_folder = f"{self.config.nextcloud_remote_dir}/{safe_party}/Processo Numero {safe_cnj}"
                     try:
-                        nc_client.upload_file(local_docx, f"{remote_folder}/{safe_cnj}_Relatorio.docx")
+                        # 1. Envia para o Arquivo Geral permanente
+                        remote_archive = f"{archive_folder}/{safe_party}/Processo Numero {safe_cnj}"
+                        nc_client.upload_file(local_docx, f"{remote_archive}/{safe_cnj}_Relatorio.docx")
                         if local_pdf and os.path.exists(local_pdf):
-                            nc_client.upload_file(local_pdf, f"{remote_folder}/{safe_cnj}_Relatorio.pdf")
+                            nc_client.upload_file(local_pdf, f"{remote_archive}/{safe_cnj}_Relatorio.pdf")
+
+                        # 2. Envia para a Pasta Rotativa Diária (alimentando o Magic Link)
+                        remote_daily = f"{daily_folder}/{safe_party} - Processo {safe_cnj}"
+                        nc_client.upload_file(local_docx, f"{remote_daily}/{safe_cnj}_Relatorio.docx")
+                        if local_pdf and os.path.exists(local_pdf):
+                            nc_client.upload_file(local_pdf, f"{remote_daily}/{safe_cnj}_Relatorio.pdf")
                     except Exception as upload_err:
                         logger.error("Erro no espelhamento do processo %s para o Nextcloud: %s", cnj, upload_err)
                         try:
@@ -238,7 +250,7 @@ class SyncService:
                                 config=self.config,
                                 subject_title="Erro de Upload no Nextcloud",
                                 error_message=f"Falha ao enviar arquivos do processo {cnj} para o Nextcloud:\n{upload_err}",
-                                context_details=f"Destino remoto: {remote_folder}"
+                                context_details=f"Destino remoto: {daily_folder}"
                             )
                         except Exception:
                             pass
@@ -284,14 +296,15 @@ class SyncService:
 
         logger.info("Sincronização concluída com sucesso! Atualizados: %s | Inalterados: %s | Total: %s", total_synced, total_skipped, total_items)
 
-        # 6. Notifica os usuários via e-mail
+        # 8. Notifica os usuários via e-mail com o Magic Link
         try:
             logger.info("Enviando relatório diário por e-mail para: %s...", self.config.notification_emails)
             send_daily_summary(
                 config=self.config,
                 stats=stats,
                 updated_items=updated_processes_summary,
-                nextcloud_folder=self.config.nextcloud_remote_dir
+                nextcloud_folder=self.config.nextcloud_remote_dir,
+                magic_link=magic_link
             )
         except Exception as mail_err:
             logger.error("Erro ao enviar e-mail diário de resumo: %s", mail_err)
