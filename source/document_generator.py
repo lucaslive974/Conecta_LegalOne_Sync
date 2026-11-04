@@ -1,17 +1,16 @@
+import logging
 import os
 import re
-import shutil
-import logging
 import subprocess
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Tuple
+from typing import Any
 
 import docx
-from docx.shared import Inches, Pt, RGBColor
+from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
-from docx.oxml import OxmlElement, parse_xml
-from docx.oxml.ns import nsdecls, qn
+from docx.oxml import parse_xml
+from docx.oxml.ns import nsdecls
+from docx.shared import Inches, Pt, RGBColor
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +75,7 @@ class DocumentGenerator:
         self.temp_dir = temp_dir
         os.makedirs(temp_dir, exist_ok=True)
 
-    def generate_process_docx(self, proc: Dict[str, Any], output_path: str) -> str:
+    def generate_process_docx(self, proc: dict[str, Any], output_path: str) -> str:
         """Create a lawsuit report in minimalist DOCX format."""
         doc = docx.Document()
 
@@ -93,11 +92,10 @@ class DocumentGenerator:
         pasta = proc.get("pasta") or "N/A"
         valor = proc.get("valorCausa")
         valor_str = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if valor else "Não informado"
-        
+
         status_info = proc.get("status") or {}
         status_nome = status_info.get("nome") if isinstance(status_info, dict) else str(status_info or "Não informado")
         dt_atualizacao = proc.get("dtHrUltimaAtualizacaoDc") or "N/A"
-        dt_cadastro = proc.get("dtHrCadastro") or "N/A"
 
         # 1. Apple-style minimalist header
         p_header = doc.add_paragraph()
@@ -310,7 +308,7 @@ class DocumentGenerator:
                 p_desc.paragraph_format.left_indent = Inches(0.2)
                 p_desc.paragraph_format.space_before = Pt(0)
                 p_desc.paragraph_format.space_after = Pt(6)
-                
+
                 # Subtle monochromatic left border
                 pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:left w:val="single" w:sz="14" w:space="8" w:color="{HEX_BLACK}"/></w:pBdr>')
                 p_desc._p.get_or_add_pPr().append(pBdr)
@@ -339,7 +337,7 @@ class DocumentGenerator:
         logger.debug("DOCX gerado em: %s", output_path)
         return output_path
 
-    def convert_docx_to_pdf(self, docx_path: str, out_dir: Optional[str] = None) -> Optional[str]:
+    def convert_docx_to_pdf(self, docx_path: str, out_dir: str | None = None) -> str | None:
         """
         Convert a DOCX file to PDF using LibreOffice headless.
         Returns the generated PDF file path or None on failure.
@@ -353,7 +351,7 @@ class DocumentGenerator:
 
         cmd = ["soffice", "--headless", "--convert-to", "pdf", "--outdir", target_dir, docx_path]
         try:
-            res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=60)
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
             if res.returncode != 0:
                 logger.warning("LibreOffice retornou código %s: %s", res.returncode, res.stderr)
                 return None
@@ -370,7 +368,7 @@ class DocumentGenerator:
             logger.error("Falha ao converter DOCX para PDF via LibreOffice: %s", e)
             return None
 
-    def render_process_documents(self, proc: Dict[str, Any], base_name: str) -> Tuple[str, Optional[str]]:
+    def render_process_documents(self, proc: dict[str, Any], base_name: str) -> tuple[str, str | None]:
         """Render both DOCX and PDF in temporary folder and return (docx_path, pdf_path)."""
         safe_name = sanitize_filename(base_name)
         docx_path = os.path.join(self.temp_dir, f"{safe_name}.docx")

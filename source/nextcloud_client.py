@@ -1,8 +1,8 @@
-import os
 import logging
+import os
 import urllib.parse
 import xml.etree.ElementTree as ET
-from typing import Optional, List, Dict, Any
+
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -18,7 +18,7 @@ class NextcloudClient:
         self.password = password
         self.verify_ssl = verify_ssl
         self.auth = HTTPBasicAuth(self.user, self.password)
-        
+
         # Default Nextcloud WebDAV endpoint
         self.dav_base_url = f"{self.base_url}/remote.php/dav/files/{urllib.parse.quote(self.user)}"
         # Nextcloud OCS Share API endpoint for Magic Links
@@ -102,12 +102,12 @@ class NextcloudClient:
             headers = {"Content-Type": "application/octet-stream"}
             res = self.session.put(remote_url, data=f, headers=headers, timeout=60)
             if res.status_code not in (200, 201, 204):
-                raise IOError(f"Falha ao enviar arquivo para Nextcloud ({res.status_code}): {res.text[:200]}")
+                raise OSError(f"Falha ao enviar arquivo para Nextcloud ({res.status_code}): {res.text[:200]}")
 
         logger.info("Upload concluído para Nextcloud: %s (%s bytes)", remote_rel_path, file_size)
         return remote_url
 
-    def list_subitems(self, remote_rel_path: str) -> List[str]:
+    def list_subitems(self, remote_rel_path: str) -> list[str]:
         """
         List relative paths of subitems (files and folders) within a remote directory.
         Excludes the parent directory itself.
@@ -138,7 +138,7 @@ class NextcloudClient:
                         rel = raw_href[idx + len(prefix):].strip("/")
                         if rel:
                             items.append(rel)
-            return sorted(list(set(items)))
+            return sorted(set(items))
         except Exception as e:
             logger.warning("Falha ao listar subitens de %s no Nextcloud: %s", remote_rel_path, e)
             return []
@@ -182,7 +182,7 @@ class NextcloudClient:
             logger.error("Erro ao deletar item %s no Nextcloud: %s", remote_rel_path, e)
             return False
 
-    def get_or_create_public_share(self, remote_rel_path: str) -> Optional[str]:
+    def get_or_create_public_share(self, remote_rel_path: str) -> str | None:
         """
         Get or create a public read-only Magic Link for a Nextcloud directory
         via Nextcloud OCS Share API.

@@ -1,13 +1,12 @@
-import os
-import json
-import shutil
 import logging
+import os
+import shutil
 from datetime import datetime
-from typing import Dict, Any, List, Optional, Set
+from typing import Any
 
-from source.config import AppConfig
 from source.auth import login_legalone
 from source.client import LegalOneClient
+from source.config import AppConfig
 from source.database import Database
 from source.document_generator import DocumentGenerator, sanitize_filename
 from source.nextcloud_client import NextcloudClient
@@ -16,7 +15,7 @@ from source.notifier import send_admin_alert, send_daily_summary
 logger = logging.getLogger(__name__)
 
 
-def extract_party_names(proc: Dict[str, Any]) -> List[str]:
+def extract_party_names(proc: dict[str, Any]) -> list[str]:
     """
     Extract main plaintiff and defendant party names.
     Deliberately ignores 'Responsável' or 'Advogado' contacts to prevent
@@ -38,7 +37,7 @@ def extract_party_names(proc: Dict[str, Any]) -> List[str]:
 
     if not parties:
         return ["Partes_Nao_Identificadas"]
-    return sorted(list(parties))
+    return sorted(parties)
 
 
 class SyncService:
@@ -53,7 +52,7 @@ class SyncService:
         )
         os.makedirs(self.local_storage_dir, exist_ok=True)
 
-    def run_sync(self) -> Dict[str, Any]:
+    def run_sync(self) -> dict[str, Any]:
         """
         Execute full daily workflow:
         1. LegalOne login (with alert on failure)

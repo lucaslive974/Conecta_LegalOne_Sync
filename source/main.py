@@ -1,9 +1,10 @@
-import sys
-import logging
 import argparse
-from source.config import config, AppConfig
-from source.notifier import test_smtp_connection, send_admin_alert
+import logging
+import sys
+
+from source.config import AppConfig, config
 from source.nextcloud_client import NextcloudClient
+from source.notifier import send_admin_alert, test_smtp_connection
 from source.sync_service import SyncService
 
 
@@ -43,7 +44,7 @@ def bootstrap_checks():
     3. Mandatory Nextcloud WebDAV test (alerts admin and aborts on failure)
     """
     logging.info("--> Executando validação de inicialização (Bootstrap Checks)...")
-    
+
     # 1. Essential environment variable validation
     try:
         config.validate_essential_configs()
@@ -115,9 +116,9 @@ def main():
     service = SyncService(config)
 
     if args.daemon:
+        import pytz
         from apscheduler.schedulers.blocking import BlockingScheduler
         from apscheduler.triggers.cron import CronTrigger
-        import pytz
 
         hour, minute = [int(p) for p in config.schedule_time.split(":")[:2]]
         tz = pytz.timezone(config.timezone)

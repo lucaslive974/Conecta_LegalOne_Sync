@@ -1,15 +1,16 @@
 import base64
 import json
 import logging
+from typing import Any
+
 import requests
-from typing import Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_LOGIN_URL = "https://conecta-api.legalone.com.br/api/auth/login"
 
 
-def extract_tenant_id_from_jwt(token: str) -> Optional[str]:
+def extract_tenant_id_from_jwt(token: str) -> str | None:
     """Automatically extract tenantId from JWT Bearer payload."""
     try:
         clean = token.strip()
@@ -30,14 +31,14 @@ def extract_tenant_id_from_jwt(token: str) -> Optional[str]:
     return None
 
 
-def login_legalone(email: str, password: str, access_code: str, base_url: Optional[str] = None) -> Dict[str, Any]:
+def login_legalone(email: str, password: str, access_code: str, base_url: str | None = None) -> dict[str, Any]:
     """
     Authenticate against the Conecta LegalOne API.
-    
+
     Expected Header: Authorization: Basic <base64(email:password)>
     JSON Body: {"accessCode": "<access code>"}
     """
-    user_pass = f"{email.strip()}:{password}".encode("utf-8")
+    user_pass = f"{email.strip()}:{password}".encode()
     basic_token = base64.b64encode(user_pass).decode("utf-8")
 
     login_url = f"{base_url.rstrip('/')}/api/auth/login" if base_url else DEFAULT_LOGIN_URL

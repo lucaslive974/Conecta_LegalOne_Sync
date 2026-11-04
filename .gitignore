@@ -16,6 +16,12 @@ data/*.db
 data/*.db-journal
 !data/.gitkeep
 
+# Test & Lint caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
 # Arquivos sensíveis ou temporários
 sessao_token.txt
 config_usuario.json

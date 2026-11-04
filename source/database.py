@@ -1,9 +1,9 @@
-import os
 import json
-import sqlite3
 import logging
+import os
+import sqlite3
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -12,7 +12,7 @@ SQL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sql")
 
 def _read_sql(filename: str) -> str:
     path = os.path.join(SQL_DIR, filename)
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return f.read()
 
 
@@ -39,7 +39,7 @@ class Database:
         with self.conn:
             self.conn.executescript(SQL_SCHEMA)
 
-    def get_process_sync_info(self, process_id: int) -> Optional[Dict[str, Any]]:
+    def get_process_sync_info(self, process_id: int) -> dict[str, Any] | None:
         cur = self.conn.cursor()
         cur.execute(SQL_GET_SYNC_INFO, (process_id,))
         row = cur.fetchone()
@@ -50,7 +50,7 @@ class Database:
             }
         return None
 
-    def save_process(self, proc_data: Dict[str, Any], pub_id: Optional[int] = None):
+    def save_process(self, proc_data: dict[str, Any], pub_id: int | None = None):
         p_id = proc_data.get("id")
         adv_pub = pub_id or proc_data.get("id_adv_publication")
         cnj = proc_data.get("numeroCNJ")
@@ -89,7 +89,7 @@ class Database:
                     andam.get("checksum"), andam.get("caminhoPDF"), andam.get("dtHrCadastro")
                 ))
 
-    def get_process_parties_summary(self, process_id: int) -> Dict[str, List[str]]:
+    def get_process_parties_summary(self, process_id: int) -> dict[str, list[str]]:
         cur = self.conn.cursor()
         cur.execute(SQL_GET_PARTIES_SUMMARY, (process_id,))
         rows = cur.fetchall()

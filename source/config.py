@@ -1,20 +1,20 @@
-import os
 import json
+import os
 from dataclasses import dataclass, field
-from typing import List, Optional
+
 from dotenv import load_dotenv
 
 # Load environment variables from a .env file if present
 load_dotenv()
 
 
-def _str_to_bool(val: Optional[str], default: bool = False) -> bool:
+def _str_to_bool(val: str | None, default: bool = False) -> bool:
     if val is None:
         return default
     return val.strip().lower() in ("1", "true", "yes", "sim", "s", "y")
 
 
-def _parse_email_list(val: Optional[str]) -> List[str]:
+def _parse_email_list(val: str | None) -> list[str]:
     if not val:
         return []
     val = val.strip()
@@ -36,7 +36,7 @@ class AppConfig:
     legalone_password: str = field(default_factory=lambda: os.getenv("LEGALONE_PASSWORD", ""))
     legalone_access_code: str = field(default_factory=lambda: os.getenv("LEGALONE_ACCESS_CODE", ""))
     legalone_base_url: str = field(default_factory=lambda: os.getenv("LEGALONE_BASE_URL", "https://conecta-api.legalone.com.br"))
-    legalone_tenant_id: Optional[str] = field(default_factory=lambda: os.getenv("LEGALONE_TENANT_ID") or None)
+    legalone_tenant_id: str | None = field(default_factory=lambda: os.getenv("LEGALONE_TENANT_ID") or None)
 
     # Nextcloud
     nextcloud_url: str = field(default_factory=lambda: os.getenv("NEXTCLOUD_URL", "").rstrip("/"))
@@ -54,7 +54,7 @@ class AppConfig:
     smtp_use_ssl: bool = field(default_factory=lambda: _str_to_bool(os.getenv("SMTP_USE_SSL"), default=False))
     smtp_from: str = field(default_factory=lambda: os.getenv("SMTP_FROM", "LegalOne Sync <noreply@empresa.com.br>"))
     admin_email: str = field(default_factory=lambda: os.getenv("ADMIN_EMAIL", ""))
-    notification_emails: List[str] = field(default_factory=lambda: _parse_email_list(os.getenv("NOTIFICATION_EMAILS", "")))
+    notification_emails: list[str] = field(default_factory=lambda: _parse_email_list(os.getenv("NOTIFICATION_EMAILS", "")))
 
     # Scheduler & paths
     db_path: str = field(default_factory=lambda: os.getenv("DB_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "historico_processos.db")))
@@ -63,7 +63,7 @@ class AppConfig:
     timezone: str = field(default_factory=lambda: os.getenv("TIMEZONE", "America/Sao_Paulo"))
     run_on_startup: bool = field(default_factory=lambda: _str_to_bool(os.getenv("RUN_ON_STARTUP"), default=False))
     page_limit: int = field(default_factory=lambda: int(os.getenv("PAGE_LIMIT", "18")))
-    max_pages: Optional[int] = field(default_factory=lambda: int(os.getenv("MAX_PAGES")) if os.getenv("MAX_PAGES") else None)
+    max_pages: int | None = field(default_factory=lambda: int(os.getenv("MAX_PAGES")) if os.getenv("MAX_PAGES") else None)
 
     def validate_essential_configs(self):
         """Validate that essential configurations required for operation are present."""
@@ -74,7 +74,7 @@ class AppConfig:
             errors.append("LEGALONE_PASSWORD não configurado.")
         if not self.legalone_access_code:
             errors.append("LEGALONE_ACCESS_CODE não configurado.")
-        
+
         if not self.nextcloud_url:
             errors.append("NEXTCLOUD_URL não configurado.")
         if not self.nextcloud_user:

@@ -1,12 +1,13 @@
+import logging
 import os
 import smtplib
-import logging
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from typing import Any
 
 import jinja2
+
 from source.config import AppConfig
 
 logger = logging.getLogger(__name__)
@@ -49,7 +50,7 @@ def test_smtp_connection(config: AppConfig) -> bool:
         raise ConnectionError(f"Falha de conexão SMTP no bootstrap: {e}") from e
 
 
-def send_email(config: AppConfig, to_addresses: List[str], subject: str, html_content: str, text_content: Optional[str] = None):
+def send_email(config: AppConfig, to_addresses: list[str], subject: str, html_content: str, text_content: str | None = None):
     """Send an HTML/text email via SMTP to the provided recipient list."""
     if not to_addresses:
         logger.warning("Nenhum destinatário informado para envio de e-mail.")
@@ -113,11 +114,11 @@ def send_admin_alert(config: AppConfig, subject_title: str, error_message: str, 
 
 def send_daily_summary(
     config: AppConfig,
-    stats: Dict[str, Any],
-    updated_items: List[Dict[str, Any]],
+    stats: dict[str, Any],
+    updated_items: list[dict[str, Any]],
     nextcloud_folder: str,
-    magic_link_daily: Optional[str] = None,
-    magic_link_archive: Optional[str] = None
+    magic_link_daily: str | None = None,
+    magic_link_archive: str | None = None
 ):
     """
     Render daily_summary.html template and send executive summary to recipients
