@@ -23,3 +23,7 @@ legalone-sync = "source.main:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["source*"]
+
+[tool.setuptools.package-data]
+source = ["sql/*.sql", "templates/emails/*.html"]
+

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>{{ subject_title }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background-color: #dc2626;
+      color: #ffffff;
+      padding: 20px 24px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .header p {
+      margin: 4px 0 0 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 24px;
+    }
+    .error-box {
+      background-color: #fef2f2;
+      border-left: 4px solid #dc2626;
+      padding: 14px;
+      margin: 16px 0;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 13px;
+      color: #991b1b;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+      font-size: 13px;
+    }
+    .meta-table td {
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .meta-label {
+      color: #64748b;
+      font-weight: 600;
+      width: 35%;
+    }
+    .footer {
+      background-color: #f8fafc;
+      padding: 16px 24px;
+      font-size: 12px;
+      color: #94a3b8;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Falha na Rotina de Sincronização</h2>
+      <p>Ocorrência em: {{ now_str }}</p>
+    </div>
+    <div class="content">
+      <p>Prezado Administrador,</p>
+      <p>A sincronização do <strong>Conecta LegalOne</strong> encontrou um problema crítico e necessita de atenção.</p>
+      
+      <div class="error-box"><strong>Detalhes do Erro:</strong><br>{{ error_message }}</div>
+      
+      {% if context_details %}
+      <p><strong>Contexto Adicional:</strong><br>{{ context_details }}</p>
+      {% endif %}
+
+      <table class="meta-table">
+        <tr>
+          <td class="meta-label">Módulo Afetado:</td>
+          <td>{{ subject_title }}</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Data/Hora:</td>
+          <td>{{ now_str }}</td>
+        </tr>
+        <tr>
+          <td class="meta-label">Ação Recomendada:</td>
+          <td>Verifique as credenciais no arquivo <code>.env</code> ou a disponibilidade do serviço afetado.</td>
+        </tr>
+      </table>
+    </div>
+    <div class="footer">
+      Sistema Automatizado Conecta LegalOne Sync • Notificação de Emergência
+    </div>
+  </div>
+</body>
+</html>
