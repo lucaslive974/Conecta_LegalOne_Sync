@@ -187,9 +187,9 @@ class SyncService:
 
                 if not is_changed:
                     # Verifica integridade da cópia local e do arquivo PDF no Nextcloud
-                    local_proc_folder = os.path.join(self.local_storage_dir, first_party, f"Processo Numero {safe_cnj}")
+                    local_proc_folder = os.path.join(self.local_storage_dir, first_party)
                     local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
-                    remote_archive_pdf = f"{archive_folder}/{first_party}/Processo Numero {safe_cnj}/{safe_cnj}_Relatorio.pdf"
+                    remote_archive_pdf = f"{archive_folder}/{first_party}/{safe_cnj}_Relatorio.pdf"
 
                     local_ok = os.path.exists(local_pdf)
                     remote_ok = nc_client.exists(remote_archive_pdf) if local_ok else False
@@ -229,12 +229,12 @@ class SyncService:
                     logger.error("Falha ao gerar PDF para o processo: %s", cnj)
                     continue
 
-                # 1. Salva na cópia local para cada polo legítimo (Autor / Réu)
-                # Obs: se a parte tiver múltiplos processos, eles coexistem em pastas distintas por CNJ
+                # 1. Salva na cópia local e no Nextcloud agrupado diretamente por Parte:
+                # Estrutura: Parte A / {CNJ}_Relatorio.pdf (sem subpastas aninhadas desnecessárias)
                 parties = extract_party_names(proc_full)
                 for party in parties:
                     safe_party = sanitize_filename(party)
-                    local_folder = os.path.join(self.local_storage_dir, safe_party, f"Processo Numero {safe_cnj}")
+                    local_folder = os.path.join(self.local_storage_dir, safe_party)
                     os.makedirs(local_folder, exist_ok=True)
 
                     local_docx = os.path.join(local_folder, f"{safe_cnj}_Relatorio.docx")
@@ -243,10 +243,9 @@ class SyncService:
                     local_pdf = os.path.join(local_folder, f"{safe_cnj}_Relatorio.pdf")
                     shutil.copy2(pdf_tmp, local_pdf)
 
-                    # 2. Upload no Nextcloud: EXCLUSIVAMENTE PDF para a pasta de Arquivo Geral
-                    # Se o arquivo já existir, o WebDAV atualiza o conteúdo in-place
+                    # 2. Upload no Nextcloud: EXCLUSIVAMENTE PDF para a pasta da Parte no Arquivo Geral
                     try:
-                        remote_archive_pdf = f"{archive_folder}/{safe_party}/Processo Numero {safe_cnj}/{safe_cnj}_Relatorio.pdf"
+                        remote_archive_pdf = f"{archive_folder}/{safe_party}/{safe_cnj}_Relatorio.pdf"
                         nc_client.upload_file(local_pdf, remote_archive_pdf)
                     except Exception as upload_err:
                         logger.error("Erro no upload do PDF do processo %s para Arquivo_Geral: %s", cnj, upload_err)
