@@ -4,7 +4,10 @@ FROM python:3.12-slim
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    TZ=America/Sao_Paulo
+    TZ=America/Sao_Paulo \
+    DB_PATH=/app/data/historico_processos.db \
+    STORAGE_DIR=/app/storage \
+    TEMP_DIR=/app/temp
 
 # Install LibreOffice (for accurate DOCX to PDF rendering), fonts, and utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \

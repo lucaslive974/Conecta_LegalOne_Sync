@@ -50,3 +50,9 @@ def test_validate_essential_configs_missing_fields():
     assert "NEXTCLOUD_URL não configurado" in err
     assert "SMTP_HOST não configurado" in err
     assert "ADMIN_EMAIL não configurado" in err
+
+
+def test_config_paths_and_storage_dir():
+    cfg = AppConfig(storage_dir="/custom/storage", db_path="/custom/db.sqlite")
+    assert cfg.storage_dir == "/custom/storage"
+    assert cfg.db_path == "/custom/db.sqlite"

@@ -109,9 +109,7 @@ class SyncService:
         self.nextcloud_client = nextcloud_client
         self.smtp_client = smtp_client
         self.http_client = http_client
-        self.local_storage_dir = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storage", "Processos"
-        )
+        self.local_storage_dir = os.path.join(self.config.storage_dir, "Processos")
         os.makedirs(self.local_storage_dir, exist_ok=True)
 
     def _init_legalone_client(self) -> LegalOneClient:

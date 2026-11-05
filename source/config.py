@@ -29,6 +29,19 @@ def _parse_email_list(val: str | None) -> list[str]:
     return [e.strip() for e in val.replace(";", ",").split(",") if e.strip()]
 
 
+def _get_default_base_dir() -> str:
+    """Determine reliable base directory for data, storage, and temp folders."""
+    # Running inside Docker container with /app mount points
+    if os.path.exists("/app/storage") and os.path.exists("/app/data"):
+        return "/app"
+    # Running in repository working directory
+    cwd = os.getcwd()
+    if os.path.exists(os.path.join(cwd, "source")):
+        return cwd
+    # Fallback to source parent directory
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
 @dataclass
 class AppConfig:
     # LegalOne
@@ -57,8 +70,17 @@ class AppConfig:
     notification_emails: list[str] = field(default_factory=lambda: _parse_email_list(os.getenv("NOTIFICATION_EMAILS", "")))
 
     # Scheduler & paths
-    db_path: str = field(default_factory=lambda: os.getenv("DB_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "historico_processos.db")))
-    temp_dir: str = field(default_factory=lambda: os.getenv("TEMP_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "temp")))
+    storage_dir: str = field(
+        default_factory=lambda: os.getenv("STORAGE_DIR", os.path.join(_get_default_base_dir(), "storage"))
+    )
+    db_path: str = field(
+        default_factory=lambda: os.getenv(
+            "DB_PATH", os.path.join(_get_default_base_dir(), "data", "historico_processos.db")
+        )
+    )
+    temp_dir: str = field(
+        default_factory=lambda: os.getenv("TEMP_DIR", os.path.join(_get_default_base_dir(), "temp"))
+    )
     schedule_time: str = field(default_factory=lambda: os.getenv("SCHEDULE_TIME", "07:00"))
     timezone: str = field(default_factory=lambda: os.getenv("TIMEZONE", "America/Sao_Paulo"))
     run_on_startup: bool = field(default_factory=lambda: _str_to_bool(os.getenv("RUN_ON_STARTUP"), default=False))
