@@ -44,7 +44,10 @@ addopts = "-v --strict-markers --cov=source --cov-report=term-missing --cov-repo
 
 [tool.coverage.run]
 source = ["source"]
-omit = ["*/__init__.py"]
+omit = [
+    "*/__init__.py",
+    "source/main.py",
+]
 
 [tool.coverage.report]
 show_missing = true
@@ -54,6 +57,7 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
     "if TYPE_CHECKING:",
+    "\\.\\.\\.",
 ]
 
 [tool.ruff]

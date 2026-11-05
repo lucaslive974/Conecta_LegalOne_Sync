@@ -192,3 +192,86 @@ def test_init_legalone_client_failure(mock_config, tmp_path, mocker):
     assert "Auth rejected" in str(excinfo.value)
     mock_smtp.send_email.assert_called_once()
     service.db.close()
+
+
+def test_generate_and_store_reports(mock_config, tmp_path, mocker):
+    mock_config.db_path = str(tmp_path / "reports_test.db")
+    service = SyncService(config=mock_config)
+    service.local_storage_dir = str(tmp_path / "storage")
+
+    # Create dummy temp docx and pdf files
+    temp_docx = tmp_path / "tmp.docx"
+    temp_docx.write_text("docx content")
+    temp_pdf = tmp_path / "tmp.pdf"
+    temp_pdf.write_text("pdf content")
+
+    mocker.patch.object(service.doc_generator, "render_process_documents", return_value=(str(temp_docx), str(temp_pdf)))
+    mock_nc = mocker.MagicMock()
+
+    proc = {"id": 123, "numeroCNJ": "5003140-58.2023.8.13.0439"}
+    parties = ["Empresa Alfa", "Empresa Beta"]
+
+    ok = service._generate_and_store_reports(
+        proc_full=proc,
+        safe_cnj="5003140_58_2023_8_13_0439",
+        parties=parties,
+        daily_folder="/Novos",
+        archive_folder="/Arquivo",
+        nc_client=mock_nc,
+    )
+
+    assert ok is True
+    # Verify local files exist in both party folders
+    for party in parties:
+        party_folder = tmp_path / "storage" / party
+        assert os.path.exists(party_folder / "5003140_58_2023_8_13_0439_Relatorio.pdf")
+        assert os.path.exists(party_folder / "5003140_58_2023_8_13_0439_Relatorio.docx")
+
+    # Uploads: 2 in archive (1 per party) + 1 in daily
+    assert mock_nc.upload_file.call_count == 3
+    service.db.close()
+
+
+def test_scan_lawsuit_pages_with_updates(mock_config, tmp_path, mocker):
+    mock_config.db_path = str(tmp_path / "scan_test.db")
+    mock_config.page_limit = 2
+    mock_config.max_pages = 1
+
+    service = SyncService(config=mock_config)
+    mock_client = mocker.MagicMock()
+    mock_client.get_processes_page.return_value = {
+        "data": {
+            "data": [
+                {
+                    "id": 999,
+                    "numeroCNJ": "5003140-58.2023.8.13.0439",
+                    "id_adv_publication": 888,
+                    "contatos": [{"posicaoEnvolvido": {"descricao": "Autor"}, "agnContato": {"nome": "Autor Teste"}}],
+                }
+            ],
+            "total": 1,
+        }
+    }
+
+    mock_nc = mocker.MagicMock()
+    storage = NextcloudStorageContext(daily_folder="/daily", archive_folder="/archive")
+
+    # Mock lawsuit generation
+    mocker.patch.object(service, "_is_process_up_to_date", return_value=False)
+    mocker.patch.object(service, "_fetch_process_details", return_value={
+        "id": 999,
+        "numeroCNJ": "5003140-58.2023.8.13.0439",
+        "recentProgresses": [{"strData": "01/01/2026", "descricao": "Movimentacao"}],
+        "contatos": [{"posicaoEnvolvido": {"descricao": "Autor"}, "agnContato": {"nome": "Autor Teste"}}],
+    })
+    mocker.patch.object(service, "_generate_and_store_reports", return_value=True)
+
+    stats, summary_items = service._scan_lawsuit_pages(mock_client, mock_nc, storage)
+
+    assert stats["synced"] == 1
+    assert stats["skipped"] == 0
+    assert stats["total"] == 1
+    assert len(summary_items) == 1
+    assert summary_items[0]["cnj"] == "5003140-58.2023.8.13.0439"
+    service.db.close()
+
