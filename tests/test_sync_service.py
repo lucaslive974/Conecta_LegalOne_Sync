@@ -36,9 +36,18 @@ def test_extract_party_names():
     }
 
     parties = extract_party_names(proc)
-    assert parties == ["Empresa Alfa", "Empresa Beta"]
+    assert parties == ["Empresa Beta"]
+    assert "Empresa Alfa" not in parties
     assert "Dr. Advogado" not in parties
     assert "Responsável Interno" not in parties
+
+    # Fallback to plaintiff if process has no defendant
+    proc_only_author = {
+        "contatos": [
+            {"posicaoEnvolvido": {"descricao": "Autor"}, "agnContato": {"nome": "Empresa Alfa"}},
+        ]
+    }
+    assert extract_party_names(proc_only_author) == ["Empresa Alfa"]
 
 
 def test_extract_party_names_fallback():

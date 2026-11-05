@@ -89,7 +89,9 @@ def test_lawsuit_from_api_dict():
     assert lawsuit.cnj == "5009876-54.2024.8.13.0024"
     assert lawsuit.safe_cnj == "5009876-54.2024.8.13.0024"
     assert lawsuit.status_nome == "Em Andamento"
-    assert lawsuit.main_parties == ["Autor Teste", "Réu Teste"]
+    assert lawsuit.main_parties == ["Réu Teste"]
+    assert lawsuit.defendants == ["Réu Teste"]
+    assert lawsuit.plaintiffs == ["Autor Teste"]
     assert lawsuit.parties_label == "Autor Teste x Réu Teste"
     assert lawsuit.last_progress is not None
     assert "Despacho proferido" in lawsuit.last_progress_summary

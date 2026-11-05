@@ -53,6 +53,18 @@ class Party:
         is_main = is_dispute and not is_internal
         return cls(nome=nome, posicao=pos, is_main_party=is_main)
 
+    @property
+    def is_defendant(self) -> bool:
+        """Indica se a parte pertence ao polo passivo (Réu, Executado, etc.)."""
+        pos_lower = self.posicao.lower()
+        return any(p in pos_lower for p in ["réu", "reu", "executado", "embargado", "recorrido", "parte adversa"])
+
+    @property
+    def is_plaintiff(self) -> bool:
+        """Indica se a parte pertence ao polo ativo (Autor, Exequente, etc.)."""
+        pos_lower = self.posicao.lower()
+        return any(p in pos_lower for p in ["autor", "exequente", "embargante", "recorrente", "parte"])
+
 
 @dataclass(frozen=True)
 class Progress:
@@ -111,20 +123,32 @@ class Lawsuit:
         return clean or f"ID_{self.id}"
 
     @property
-    def main_parties(self) -> list[str]:
-        names = [p.nome for p in self.partes if p.is_main_party]
+    def defendants(self) -> list[str]:
+        """Nomes dos réus ou partes do polo passivo."""
+        names = [p.nome for p in self.partes if p.is_main_party and p.is_defendant]
+        if not names:
+            names = [p.nome for p in self.partes if p.is_main_party and p.is_plaintiff]
         if not names:
             return ["Partes_Nao_Identificadas"]
         return sorted(set(names))
 
     @property
+    def plaintiffs(self) -> list[str]:
+        """Nomes dos autores ou partes do polo ativo."""
+        return sorted({p.nome for p in self.partes if p.is_main_party and p.is_plaintiff})
+
+    @property
+    def main_parties(self) -> list[str]:
+        """Partes utilizadas para organização de pastas (agrupa pelo Réu)."""
+        return self.defendants
+
+    @property
     def parties_label(self) -> str:
-        parties = self.main_parties
-        if len(parties) >= 2:
-            return f"{parties[0]} x {parties[1]}"
-        if parties:
-            return parties[0]
-        return "Processo"
+        plaintiffs = self.plaintiffs
+        defendants = [p.nome for p in self.partes if p.is_main_party and p.is_defendant]
+        if plaintiffs and defendants and plaintiffs[0] != defendants[0]:
+            return f"{plaintiffs[0]} x {defendants[0]}"
+        return self.defendants[0] if self.defendants else "Processo"
 
     @property
     def last_progress(self) -> Progress | None:

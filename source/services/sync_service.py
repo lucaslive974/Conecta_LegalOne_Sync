@@ -30,30 +30,34 @@ NextcloudStorageContext = StorageContext
 
 def extract_party_names(proc: Lawsuit | dict[str, Any]) -> list[str]:
     """
-    Extract main plaintiff and defendant party names.
-    Deliberately ignores 'Responsável' or 'Advogado' contacts to prevent
-    office-wide lawsuits from being duplicated under internal lawyer folders.
+    Extract defendant party names (polo passivo: Réu, Executado, Embargado, Recorrido, Parte Adversa).
+    If no defendant is registered, falls back to the plaintiff (Autor) to prevent loss of files.
     """
     if isinstance(proc, Lawsuit):
         return proc.main_parties
 
     contatos = proc.get("contatos") or []
-    parties = set()
+    defendants: list[str] = []
+    plaintiffs: list[str] = []
+
     for c in contatos:
         pos = (c.get("posicaoEnvolvido") or {}).get("descricao", "").lower()
         agn = c.get("agnContato") or {}
         nome = agn.get("nome")
         if not nome:
             continue
-        # Do not add internal lawyers or representatives as a main dispute party
+        # Do not add internal lawyers or representatives
         if any(ign in pos for ign in ["responsável", "responsavel", "advogado", "patrono"]):
             continue
-        if any(p in pos for p in ["autor", "réu", "reu", "exequente", "executado", "embargante", "embargado", "parte"]):
-            parties.add(nome)
+        if any(p in pos for p in ["réu", "reu", "executado", "embargado", "recorrido", "parte adversa"]):
+            defendants.append(nome)
+        elif any(p in pos for p in ["autor", "exequente", "embargante", "recorrente", "parte"]):
+            plaintiffs.append(nome)
 
-    if not parties:
+    chosen = defendants if defendants else plaintiffs
+    if not chosen:
         return ["Partes_Nao_Identificadas"]
-    return sorted(parties)
+    return sorted(set(chosen))
 
 
 def format_parties_label(parties: list[str] | Lawsuit) -> str:
