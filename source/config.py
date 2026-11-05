@@ -99,7 +99,7 @@ class AppConfig:
     schedule_time: str = field(default_factory=lambda: os.getenv("SCHEDULE_TIME", "07:00"))
     timezone: str = field(default_factory=lambda: os.getenv("TIMEZONE", "America/Sao_Paulo"))
     run_on_startup: bool = field(default_factory=lambda: _str_to_bool(os.getenv("RUN_ON_STARTUP"), default=False))
-    page_limit: int = field(default_factory=lambda: int(os.getenv("PAGE_LIMIT", "18")))
+    page_limit: int = field(default_factory=lambda: int(os.getenv("PAGE_LIMIT", "50")))
     max_pages: int | None = field(default_factory=lambda: _parse_int_optional(os.getenv("MAX_PAGES")))
 
     def validate_essential_configs(self):

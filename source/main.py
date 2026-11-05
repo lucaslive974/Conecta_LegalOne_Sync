@@ -61,6 +61,13 @@ def parse_args(args: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Executa em modo agendado contínuo (daemon)",
     )
+    parser.add_argument(
+        "--heal-remote",
+        "--repair-remote",
+        action="store_true",
+        dest="heal_remote",
+        help="Executa rotina dedicada de Health Recovery (reconciliação de PDFs locais com o Nextcloud)",
+    )
     return parser.parse_args(args)
 
 
@@ -209,6 +216,24 @@ def main(args_list: list[str] | None = None) -> int:
             return 0
         except Exception as e:
             print(f"[✕] Falha no teste de Nextcloud: {e}")
+            return 1
+
+    if args.heal_remote:
+        logging.info("Executando rotina dedicada de Health Recovery do Nextcloud...")
+        try:
+            verify_nextcloud_bootstrap(config)
+            service = SyncService(config)
+            stats = service.heal_remote_storage()
+            print(
+                f"[✓] Health Recovery concluído! "
+                f"Total: {stats['total_local_files']} | "
+                f"Já presentes: {stats['already_present']} | "
+                f"Restaurados: {stats['restored']} | "
+                f"Erros: {stats['errors']}"
+            )
+            return 0 if stats["errors"] == 0 else 1
+        except Exception as e:
+            print(f"[✕] Falha no Health Recovery: {e}")
             return 1
 
     try:

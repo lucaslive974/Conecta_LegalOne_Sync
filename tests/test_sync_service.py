@@ -158,20 +158,18 @@ def test_is_process_up_to_date(mock_config, tmp_path, mocker):
     item = {"id": 10, "dtHrUltimaAtualizacaoDc": "2026-01-01", "id_adv_publication": 100}
     assert service._is_process_up_to_date(item, "ParteA", "CNJ10", "/archive", mock_nc) is False
 
-    # 2. In DB with same timestamps and files exist locally and remotely -> Up to date
+    # 2. In DB with same timestamps and local file exists -> Up to date
     service.db.save_process(item, pub_id=100)
     party_folder = tmp_path / "storage" / "ParteA"
     os.makedirs(party_folder, exist_ok=True)
     local_pdf = party_folder / "CNJ10_Relatorio.pdf"
     local_pdf.write_text("dummy")
 
-    mock_nc.exists.return_value = True
-    assert service._is_process_up_to_date(item, "ParteA", "CNJ10", "/archive", mock_nc) is True
+    assert service._is_process_up_to_date(item, "ParteA", "CNJ10") is True
 
-    # 3. In DB with same timestamp, local file exists, but remote missing -> uploads and heals
-    mock_nc.exists.return_value = False
-    assert service._is_process_up_to_date(item, "ParteA", "CNJ10", "/archive", mock_nc) is True
-    mock_nc.upload_file.assert_called_once()
+    # 3. In DB with same timestamp, but local file missing -> Not up to date (triggers recreation)
+    os.remove(local_pdf)
+    assert service._is_process_up_to_date(item, "ParteA", "CNJ10") is False
 
     service.db.close()
 
@@ -276,4 +274,36 @@ def test_scan_lawsuit_pages_with_updates(mock_config, tmp_path, mocker):
     assert stats["total"] == 1
     assert len(summary_items) == 1
     assert summary_items[0]["cnj"] == "5003140-58.2023.8.13.0439"
+    service.db.close()
+
+
+def test_heal_remote_storage(mock_config, tmp_path, mocker):
+    mock_config.db_path = str(tmp_path / "heal_test.db")
+    service = SyncService(config=mock_config)
+    service.local_storage_dir = str(tmp_path / "storage")
+
+    # Create local party folders and files
+    party_a = tmp_path / "storage" / "Empresa_Alfa"
+    party_a.mkdir(parents=True)
+    pdf1 = party_a / "CNJ1_Relatorio.pdf"
+    pdf1.write_bytes(b"%PDF-test-1")
+    pdf2 = party_a / "CNJ2_Relatorio.pdf"
+    pdf2.write_bytes(b"%PDF-test-2")
+
+    mock_nc = mocker.MagicMock()
+    # pdf1 exists on Nextcloud, pdf2 does NOT
+    mock_nc.exists.side_effect = lambda path: "CNJ1" in path
+
+    stats = service.heal_remote_storage(nc_client=mock_nc)
+
+    assert stats["total_local_files"] == 2
+    assert stats["already_present"] == 1
+    assert stats["restored"] == 1
+    assert stats["errors"] == 0
+
+    mock_nc.ensure_directory.assert_called()
+    mock_nc.upload_file.assert_called_once_with(
+        str(pdf2),
+        f"{mock_config.nextcloud_remote_dir}/Arquivo_Geral/Empresa_Alfa/CNJ2_Relatorio.pdf",
+    )
     service.db.close()

@@ -140,6 +140,30 @@ def test_main_test_nextcloud_flag(mocker):
     assert main(["--test-nextcloud"]) == 1
 
 
+def test_main_heal_remote_flag(mocker):
+    mocker.patch("source.main.verify_nextcloud_bootstrap")
+    mock_service_cls = mocker.patch("source.main.SyncService")
+    mock_service = mock_service_cls.return_value
+    mock_service.heal_remote_storage.return_value = {
+        "total_local_files": 10,
+        "already_present": 8,
+        "restored": 2,
+        "errors": 0,
+    }
+
+    assert main(["--heal-remote"]) == 0
+    mock_service.heal_remote_storage.assert_called_once()
+
+    # When errors occur
+    mock_service.heal_remote_storage.return_value = {
+        "total_local_files": 10,
+        "already_present": 5,
+        "restored": 2,
+        "errors": 3,
+    }
+    assert main(["--heal-remote"]) == 1
+
+
 def test_main_bootstrap_failure(mocker):
     mocker.patch("source.main.bootstrap_checks", side_effect=Exception("Bootstrap failed"))
     assert main([]) == 1

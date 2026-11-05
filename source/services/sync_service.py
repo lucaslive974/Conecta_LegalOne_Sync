@@ -217,12 +217,12 @@ class SyncService:
         item: Lawsuit | dict[str, Any],
         first_party: str,
         safe_cnj: str,
-        archive_folder: str,
-        nc_client: NextcloudClient,
+        archive_folder: str | None = None,
+        nc_client: NextcloudClient | None = None,
     ) -> bool:
         """
-        Verify if lawsuit is unchanged in SQLite database and retains intact
-        PDF copies locally and on Nextcloud (auto-healing remote copy if missing).
+        Verify if lawsuit is unchanged in SQLite database and has an intact
+        PDF report on local disk. Zero network requests required.
         """
         p_id: int | str
         if isinstance(item, Lawsuit):
@@ -244,27 +244,82 @@ class SyncService:
         if is_changed:
             return False
 
-        # Verify local disk and remote Nextcloud PDF integrity
+        # Verify local disk PDF integrity (zero network requests)
         local_proc_folder = os.path.join(self.local_storage_dir, first_party)
         local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
-        remote_archive_pdf = f"{archive_folder}/{first_party}/{safe_cnj}_Relatorio.pdf"
 
-        local_ok = os.path.exists(local_pdf)
-        remote_ok = nc_client.exists(remote_archive_pdf) if local_ok else False
-
-        if local_ok and remote_ok:
+        if os.path.exists(local_pdf):
             return True
 
-        if local_ok and not remote_ok:
-            logger.info("Detectada ausência do PDF no Nextcloud para %s. Reenviando cópia local...", cnj)
-            try:
-                nc_client.upload_file(local_pdf, remote_archive_pdf)
-                return True
-            except Exception as sync_err:
-                logger.error("Erro ao restabelecer PDF no Nextcloud para %s: %s", cnj, sync_err)
-
-        logger.info("Processo sem alteração na API mas com PDF ausente em disco. Recriando: %s", cnj)
+        logger.info("Processo sem alteração na API mas com PDF ausente em disco local. Recriando: %s", cnj)
         return False
+
+    def heal_remote_storage(self, nc_client: NextcloudClient | None = None) -> dict[str, int]:
+        """
+        Dedicated health recovery routine.
+        Scans local storage directories and reconciles with Nextcloud:
+        ensures remote folders exist and re-uploads any missing PDF files.
+        """
+        client = nc_client or self._get_nextcloud_client()
+        archive_folder = f"{self.config.nextcloud_remote_dir}/Arquivo_Geral"
+        client.ensure_directory(archive_folder)
+
+        logger.info("Iniciando rotina de Health Recovery do Nextcloud...")
+        logger.info("Diretório local base: %s", self.local_storage_dir)
+        logger.info("Pasta remota de acervo: %s", archive_folder)
+
+        stats = {
+            "total_local_files": 0,
+            "already_present": 0,
+            "restored": 0,
+            "errors": 0,
+        }
+
+        if not os.path.exists(self.local_storage_dir):
+            logger.warning("Diretório de armazenamento local não existe: %s", self.local_storage_dir)
+            return stats
+
+        for entry in os.scandir(self.local_storage_dir):
+            if not entry.is_dir():
+                continue
+
+            party_folder_name = entry.name
+            remote_party_dir = f"{archive_folder}/{party_folder_name}"
+
+            pdf_files = [f for f in os.scandir(entry.path) if f.is_file() and f.name.lower().endswith(".pdf")]
+            if not pdf_files:
+                continue
+
+            party_dir_ensured = False
+
+            for pdf_entry in pdf_files:
+                stats["total_local_files"] += 1
+                remote_pdf_path = f"{remote_party_dir}/{pdf_entry.name}"
+
+                try:
+                    if client.exists(remote_pdf_path):
+                        stats["already_present"] += 1
+                        continue
+
+                    if not party_dir_ensured:
+                        client.ensure_directory(remote_party_dir)
+                        party_dir_ensured = True
+
+                    logger.info("Restaurando arquivo ausente no Nextcloud: %s", remote_pdf_path)
+                    client.upload_file(pdf_entry.path, remote_pdf_path)
+                    stats["restored"] += 1
+                except Exception as err:
+                    logger.error("Erro ao verificar/restaurar %s: %s", remote_pdf_path, err)
+                    stats["errors"] += 1
+
+        logger.info(
+            "Health Recovery concluído. Total: %d, Já presentes: %d, Restaurados: %d, Erros: %d",
+            stats["total_local_files"],
+            stats["already_present"],
+            stats["restored"],
+            stats["errors"],
+        )
+        return stats
 
     def _fetch_process_details(
         self, client: LegalOneClient, item: Lawsuit | dict[str, Any]
@@ -374,7 +429,7 @@ class SyncService:
 
         first_party = sanitize_filename(parties[0])
 
-        if self._is_process_up_to_date(item, first_party, safe_cnj, storage.archive_folder, nc_client):
+        if self._is_process_up_to_date(item, first_party, safe_cnj):
             return False, None
 
         proc_full = self._fetch_process_details(client, item)
