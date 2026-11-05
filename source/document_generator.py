@@ -77,29 +77,18 @@ class DocumentGenerator:
         self.temp_dir = temp_dir
         os.makedirs(temp_dir, exist_ok=True)
 
-    def generate_process_docx(self, proc: dict[str, Any], output_path: str) -> str:
-        """Create a lawsuit report in minimalist DOCX format."""
-        doc = docx.Document()
-
-        # Configure refined margins (2 cm = ~0.78 inches)
+    @staticmethod
+    def _setup_document_margins(doc: docx.Document, margin_inches: float = 0.8) -> None:
+        """Configure page margins across document sections."""
         for section in doc.sections:
-            section.top_margin = Inches(0.8)
-            section.bottom_margin = Inches(0.8)
-            section.left_margin = Inches(0.8)
-            section.right_margin = Inches(0.8)
+            section.top_margin = Inches(margin_inches)
+            section.bottom_margin = Inches(margin_inches)
+            section.left_margin = Inches(margin_inches)
+            section.right_margin = Inches(margin_inches)
 
-        # Key lawsuit data
-        cnj = proc.get("numeroCNJ") or f"ID_{proc.get('id')}"
-        p_id = proc.get("id") or "N/A"
-        pasta = proc.get("pasta") or "N/A"
-        valor = proc.get("valorCausa")
-        valor_str = f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if valor else "Não informado"
-
-        status_info = proc.get("status") or {}
-        status_nome = status_info.get("nome") if isinstance(status_info, dict) else str(status_info or "Não informado")
-        dt_atualizacao = proc.get("dtHrUltimaAtualizacaoDc") or "N/A"
-
-        # 1. Apple-style minimalist header
+    @staticmethod
+    def _add_document_header(doc: docx.Document, pasta: str, cnj: str, cnj_info: dict[str, Any]) -> None:
+        """Add Apple-style minimalist header eyebrow, title, subtitle, and divider."""
         p_header = doc.add_paragraph()
         p_header.paragraph_format.space_before = Pt(0)
         p_header.paragraph_format.space_after = Pt(2)
@@ -119,12 +108,14 @@ class DocumentGenerator:
         run_title.font.color.rgb = COLOR_BLACK
 
         # Subtitle: Folder + Tribunal / Year + Issue timestamp
-        cnj_info = parse_cnj(cnj)
         p_sub = doc.add_paragraph()
         p_sub.paragraph_format.space_before = Pt(0)
         p_sub.paragraph_format.space_after = Pt(12)
-        if cnj_info["is_valid"]:
-            sub_meta = f"Pasta: {pasta}  •  {cnj_info['tribunal_sigla']} ({cnj_info['ano']})  •  Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+        if cnj_info.get("is_valid"):
+            sub_meta = (
+                f"Pasta: {pasta}  •  {cnj_info['tribunal_sigla']} ({cnj_info['ano']})  •  "
+                f"Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+            )
         else:
             sub_meta = f"Pasta: {pasta}  •  Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
         run_sub = p_sub.add_run(sub_meta)
@@ -136,10 +127,19 @@ class DocumentGenerator:
         p_hr = doc.add_paragraph()
         p_hr.paragraph_format.space_before = Pt(0)
         p_hr.paragraph_format.space_after = Pt(10)
-        p_hr_border = parse_xml(f'<w:pBdr {nsdecls("w")}><w:bottom w:val="single" w:sz="6" w:space="1" w:color="{HEX_BORDER}"/></w:pBdr>')
+        p_hr_border = parse_xml(
+            f'<w:pBdr {nsdecls("w")}><w:bottom w:val="single" w:sz="6" w:space="1" w:color="{HEX_BORDER}"/></w:pBdr>'
+        )
         p_hr._p.get_or_add_pPr().append(p_hr_border)
 
-        # 2. Lawsuit overview table
+    @staticmethod
+    def _add_general_data_section(
+        doc: docx.Document,
+        proc: dict[str, Any],
+        cnj: str,
+        cnj_info: dict[str, Any],
+    ) -> None:
+        """Add '1. Dados Gerais do Processo' section with key metadata table."""
         h1 = doc.add_heading("1. Dados Gerais do Processo", level=2)
         h1.paragraph_format.space_before = Pt(8)
         h1.paragraph_format.space_after = Pt(6)
@@ -149,18 +149,39 @@ class DocumentGenerator:
             r.font.bold = True
             r.font.color.rgb = COLOR_BLACK
 
+        p_id = proc.get("id") or "N/A"
+        pasta = proc.get("pasta") or "N/A"
+        valor = proc.get("valorCausa")
+        valor_str = (
+            f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+            if valor
+            else "Não informado"
+        )
+        status_info = proc.get("status") or {}
+        status_nome = (
+            status_info.get("nome")
+            if isinstance(status_info, dict)
+            else str(status_info or "Não informado")
+        )
+        dt_atualizacao = proc.get("dtHrUltimaAtualizacaoDc") or "N/A"
+
         tribunal_display = (
             f"{cnj_info['tribunal_sigla']} - {cnj_info['tribunal_nome']}"
-            if cnj_info["is_valid"]
-            else cnj_info["tribunal_nome"]
+            if cnj_info.get("is_valid")
+            else cnj_info.get("tribunal_nome", "Não informado")
         )
 
         meta_fields = [
             ("Número CNJ", cnj, "ID Conecta", str(p_id)),
-            ("Tribunal Competente", tribunal_display, "Esfera / Ramo", cnj_info["ramo"]),
-            ("Ano de Distribuição", cnj_info["ano"], "Status", status_nome),
+            ("Tribunal Competente", tribunal_display, "Esfera / Ramo", cnj_info.get("ramo", "N/A")),
+            ("Ano de Distribuição", cnj_info.get("ano", "N/A"), "Status", status_nome),
             ("Valor da Causa", valor_str, "Pasta", pasta),
-            ("Cód. Comarca / Foro", cnj_info["origem_codigo"], "Última Atualização", str(dt_atualizacao)),
+            (
+                "Cód. Comarca / Foro",
+                cnj_info.get("origem_codigo", "N/A"),
+                "Última Atualização",
+                str(dt_atualizacao),
+            ),
         ]
 
         table_meta = doc.add_table(rows=len(meta_fields), cols=4)
@@ -215,7 +236,9 @@ class DocumentGenerator:
             run.font.size = Pt(9)
             run.font.color.rgb = COLOR_BLACK
 
-        # 3. Parties and stakeholders table
+    @staticmethod
+    def _add_parties_section(doc: docx.Document, contatos: list[dict[str, Any]]) -> None:
+        """Add '2. Polos Processuais e Partes' section with parties table."""
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
         h2 = doc.add_heading("2. Polos Processuais e Partes", level=2)
         h2.paragraph_format.space_before = Pt(12)
@@ -226,58 +249,59 @@ class DocumentGenerator:
             r.font.bold = True
             r.font.color.rgb = COLOR_BLACK
 
-        contatos = proc.get("contatos") or []
-        if contatos:
-            table_parts = doc.add_table(rows=1, cols=4)
-            table_parts.alignment = WD_TABLE_ALIGNMENT.CENTER
-            set_table_borders(table_parts, color=HEX_BORDER)
-
-            hdr_cells = table_parts.rows[0].cells
-            headers_title = ["Posição", "Nome da Parte", "CPF / CNPJ", "Principal"]
-            hdr_widths = [Inches(1.8), Inches(2.7), Inches(1.6), Inches(0.9)]
-
-            for i, title in enumerate(headers_title):
-                hdr_cells[i].width = hdr_widths[i]
-                set_cell_background(hdr_cells[i], HEX_SURFACE)
-                set_cell_margins(hdr_cells[i], top=90, bottom=90, left=100, right=100)
-                p = hdr_cells[i].paragraphs[0]
-                p.paragraph_format.space_after = Pt(0)
-                run = p.add_run(title.upper())
-                run.font.name = "Segoe UI"
-                run.font.size = Pt(8)
-                run.font.bold = True
-                run.font.color.rgb = COLOR_MUTED
-
-            for c in contatos:
-                row_cells = table_parts.add_row().cells
-                agn = c.get("agnContato") or {}
-                pos = c.get("posicaoEnvolvido") or {}
-                pos_nome = pos.get("descricao") or "Envolvido"
-                nome = agn.get("nome") or "Não informado"
-                doc_num = agn.get("cpfCnpj") or "-"
-                princ = "Sim" if c.get("isPrincipal") else "Não"
-
-                vals = [pos_nome, nome, doc_num, princ]
-                for i, v in enumerate(vals):
-                    row_cells[i].width = hdr_widths[i]
-                    set_cell_margins(row_cells[i], top=70, bottom=70, left=100, right=100)
-                    p = row_cells[i].paragraphs[0]
-                    p.paragraph_format.space_after = Pt(0)
-                    run = p.add_run(v)
-                    run.font.name = "Segoe UI"
-                    run.font.size = Pt(8.5)
-                    run.font.color.rgb = COLOR_BLACK
-                    if i == 0:
-                        run.font.bold = True
-        else:
+        if not contatos:
             p_empty = doc.add_paragraph("Nenhuma parte especificada cadastrada.")
             p_empty.runs[0].font.italic = True
             p_empty.runs[0].font.size = Pt(9)
             p_empty.runs[0].font.color.rgb = COLOR_MUTED
+            return
 
-        # 4. Updates and publications
+        table_parts = doc.add_table(rows=1, cols=4)
+        table_parts.alignment = WD_TABLE_ALIGNMENT.CENTER
+        set_table_borders(table_parts, color=HEX_BORDER)
+
+        hdr_cells = table_parts.rows[0].cells
+        headers_title = ["Posição", "Nome da Parte", "CPF / CNPJ", "Principal"]
+        hdr_widths = [Inches(1.8), Inches(2.7), Inches(1.6), Inches(0.9)]
+
+        for i, title in enumerate(headers_title):
+            hdr_cells[i].width = hdr_widths[i]
+            set_cell_background(hdr_cells[i], HEX_SURFACE)
+            set_cell_margins(hdr_cells[i], top=90, bottom=90, left=100, right=100)
+            p = hdr_cells[i].paragraphs[0]
+            p.paragraph_format.space_after = Pt(0)
+            run = p.add_run(title.upper())
+            run.font.name = "Segoe UI"
+            run.font.size = Pt(8)
+            run.font.bold = True
+            run.font.color.rgb = COLOR_MUTED
+
+        for c in contatos:
+            row_cells = table_parts.add_row().cells
+            agn = c.get("agnContato") or {}
+            pos = c.get("posicaoEnvolvido") or {}
+            pos_nome = pos.get("descricao") or "Envolvido"
+            nome = agn.get("nome") or "Não informado"
+            doc_num = agn.get("cpfCnpj") or "-"
+            princ = "Sim" if c.get("isPrincipal") else "Não"
+
+            vals = [pos_nome, nome, doc_num, princ]
+            for i, v in enumerate(vals):
+                row_cells[i].width = hdr_widths[i]
+                set_cell_margins(row_cells[i], top=70, bottom=70, left=100, right=100)
+                p = row_cells[i].paragraphs[0]
+                p.paragraph_format.space_after = Pt(0)
+                run = p.add_run(v)
+                run.font.name = "Segoe UI"
+                run.font.size = Pt(8.5)
+                run.font.color.rgb = COLOR_BLACK
+                if i == 0:
+                    run.font.bold = True
+
+    @staticmethod
+    def _add_progress_section(doc: docx.Document, andamentos: list[dict[str, Any]]) -> None:
+        """Add '3. Andamentos e Publicações' timeline and blockquote entries."""
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
-        andamentos = proc.get("recentProgresses") or proc.get("progresses") or []
         h3 = doc.add_heading(f"3. Andamentos e Publicações ({len(andamentos)})", level=2)
         h3.paragraph_format.space_before = Pt(14)
         h3.paragraph_format.space_after = Pt(6)
@@ -287,66 +311,103 @@ class DocumentGenerator:
             r.font.bold = True
             r.font.color.rgb = COLOR_BLACK
 
-        if andamentos:
-            for idx, andam in enumerate(andamentos, 1):
-                data = andam.get("strData") or andam.get("dtHrAndamento", "")[:10]
-                hora = andam.get("strHora") or ""
-                origem = andam.get("source") or ("Diário Oficial" if andam.get("tipoOrigem") == 1 else "Sistema Judicial")
-                caderno = andam.get("nomeCaderno")
-                origem_full = f"{origem} • {caderno}" if caderno else origem
-                desc = (andam.get("descricao") or "").strip()
-
-                p_item = doc.add_paragraph()
-                p_item.paragraph_format.space_before = Pt(8)
-                p_item.paragraph_format.space_after = Pt(2)
-                p_item.paragraph_format.keep_with_next = True
-
-                # Minimalist numbered index
-                run_num = p_item.add_run(f"#{idx} ")
-                run_num.font.name = "Segoe UI"
-                run_num.font.size = Pt(9)
-                run_num.font.bold = True
-                run_num.font.color.rgb = COLOR_MUTED
-
-                run_dt = p_item.add_run(f"[{data} {hora}] ")
-                run_dt.font.name = "Segoe UI"
-                run_dt.font.size = Pt(9)
-                run_dt.font.bold = True
-                run_dt.font.color.rgb = COLOR_BLACK
-
-                run_orig = p_item.add_run(f"— {origem_full}")
-                run_orig.font.name = "Segoe UI"
-                run_orig.font.size = Pt(8.5)
-                run_orig.font.color.rgb = COLOR_MUTED
-
-                # Update blockquote box with matte left border
-                p_desc = doc.add_paragraph()
-                p_desc.paragraph_format.left_indent = Inches(0.2)
-                p_desc.paragraph_format.space_before = Pt(0)
-                p_desc.paragraph_format.space_after = Pt(6)
-
-                # Subtle monochromatic left border
-                pBdr = parse_xml(f'<w:pBdr {nsdecls("w")}><w:left w:val="single" w:sz="14" w:space="8" w:color="{HEX_BLACK}"/></w:pBdr>')
-                p_desc._p.get_or_add_pPr().append(pBdr)
-
-                run_txt = p_desc.add_run(desc if desc else "(Sem descrição registrada)")
-                run_txt.font.name = "Segoe UI"
-                run_txt.font.size = Pt(8.5)
-                run_txt.font.color.rgb = COLOR_DARK
-        else:
-            p_none = doc.add_paragraph("Nenhum andamento ou publicação registrado para este processo até o momento.")
+        if not andamentos:
+            p_none = doc.add_paragraph(
+                "Nenhum andamento ou publicação registrado para este processo até o momento."
+            )
             p_none.runs[0].font.italic = True
             p_none.runs[0].font.size = Pt(9)
             p_none.runs[0].font.color.rgb = COLOR_MUTED
+            return
 
-        # Footer
+        for idx, andam in enumerate(andamentos, 1):
+            data = andam.get("strData") or andam.get("dtHrAndamento", "")[:10]
+            hora = andam.get("strHora") or ""
+            origem = andam.get("source") or (
+                "Diário Oficial" if andam.get("tipoOrigem") == 1 else "Sistema Judicial"
+            )
+            caderno = andam.get("nomeCaderno")
+            origem_full = f"{origem} • {caderno}" if caderno else origem
+            desc = (andam.get("descricao") or "").strip()
+
+            p_item = doc.add_paragraph()
+            p_item.paragraph_format.space_before = Pt(8)
+            p_item.paragraph_format.space_after = Pt(2)
+            p_item.paragraph_format.keep_with_next = True
+
+            # Minimalist numbered index
+            run_num = p_item.add_run(f"#{idx} ")
+            run_num.font.name = "Segoe UI"
+            run_num.font.size = Pt(9)
+            run_num.font.bold = True
+            run_num.font.color.rgb = COLOR_MUTED
+
+            run_dt = p_item.add_run(f"[{data} {hora}] ")
+            run_dt.font.name = "Segoe UI"
+            run_dt.font.size = Pt(9)
+            run_dt.font.bold = True
+            run_dt.font.color.rgb = COLOR_BLACK
+
+            run_orig = p_item.add_run(f"— {origem_full}")
+            run_orig.font.name = "Segoe UI"
+            run_orig.font.size = Pt(8.5)
+            run_orig.font.color.rgb = COLOR_MUTED
+
+            # Update blockquote box with matte left border
+            p_desc = doc.add_paragraph()
+            p_desc.paragraph_format.left_indent = Inches(0.2)
+            p_desc.paragraph_format.space_before = Pt(0)
+            p_desc.paragraph_format.space_after = Pt(6)
+
+            # Subtle monochromatic left border
+            pBdr = parse_xml(
+                f'<w:pBdr {nsdecls("w")}><w:left w:val="single" w:sz="14" w:space="8" w:color="{HEX_BLACK}"/></w:pBdr>'
+            )
+            p_desc._p.get_or_add_pPr().append(pBdr)
+
+            run_txt = p_desc.add_run(desc if desc else "(Sem descrição registrada)")
+            run_txt.font.name = "Segoe UI"
+            run_txt.font.size = Pt(8.5)
+            run_txt.font.color.rgb = COLOR_DARK
+
+    @staticmethod
+    def _add_document_footer(doc: docx.Document) -> None:
+        """Add confidentiality notice and timestamp to section footer."""
         footer = doc.sections[0].footer
         p_ft = footer.paragraphs[0]
         p_ft.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        run_ft = p_ft.add_run(f"Conecta LegalOne • Documento Confidencial • {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        run_ft = p_ft.add_run(
+            f"Conecta LegalOne • Documento Confidencial • {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+        )
         run_ft.font.name = "Segoe UI"
         run_ft.font.size = Pt(7.5)
         run_ft.font.color.rgb = COLOR_MUTED
+
+    def generate_process_docx(self, proc: dict[str, Any], output_path: str) -> str:
+        """Create a lawsuit report in minimalist DOCX format."""
+        doc = docx.Document()
+        self._setup_document_margins(doc)
+
+        cnj = proc.get("numeroCNJ") or f"ID_{proc.get('id')}"
+        pasta = proc.get("pasta") or "N/A"
+        cnj_info = parse_cnj(cnj)
+
+        # 1. Header with title and metadata
+        self._add_document_header(doc, pasta=pasta, cnj=cnj, cnj_info=cnj_info)
+
+        # 2. General lawsuit data table
+        self._add_general_data_section(doc, proc=proc, cnj=cnj, cnj_info=cnj_info)
+
+        # 3. Parties and stakeholders table
+        self._add_parties_section(doc, proc.get("contatos") or [])
+
+        # 4. Updates and publications timeline
+        self._add_progress_section(
+            doc, proc.get("recentProgresses") or proc.get("progresses") or []
+        )
+
+        # 5. Confidential footer
+        self._add_document_footer(doc)
 
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
         doc.save(output_path)
