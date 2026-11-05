@@ -1,6 +1,5 @@
 from source.domain.cnj import parse_cnj
 from source.domain.models import (
-    CNJDetails,
     Lawsuit,
     Party,
     ProcessSummaryEntry,
@@ -51,14 +50,16 @@ def test_party_from_dict():
 
 
 def test_progress_from_dict():
-    pr = Progress.from_dict({
-        "id": 99,
-        "strData": "01/11/2026",
-        "strHora": "10:30",
-        "source": "Diário Oficial",
-        "nomeCaderno": "Judicial 1",
-        "descricao": "Publicação de sentença",
-    })
+    pr = Progress.from_dict(
+        {
+            "id": 99,
+            "strData": "01/11/2026",
+            "strHora": "10:30",
+            "source": "Diário Oficial",
+            "nomeCaderno": "Judicial 1",
+            "descricao": "Publicação de sentença",
+        }
+    )
     assert pr.id == 99
     assert pr.data == "01/11/2026"
     assert pr.origem == "Diário Oficial"

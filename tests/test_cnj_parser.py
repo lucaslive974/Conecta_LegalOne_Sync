@@ -1,4 +1,4 @@
-from source.cnj_parser import parse_cnj
+from source.domain.cnj import parse_cnj
 
 
 def test_parse_cnj_state_court_tjmg():

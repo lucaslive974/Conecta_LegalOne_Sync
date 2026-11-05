@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime
-from typing import Any, Union
+from typing import Any
 
 import jinja2
 
@@ -13,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates", "emails")
 jinja_env = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(TEMPLATES_DIR),
-    autoescape=jinja2.select_autoescape(["html", "xml"])
+    loader=jinja2.FileSystemLoader(TEMPLATES_DIR), autoescape=jinja2.select_autoescape(["html", "xml"])
 )
 
 
@@ -59,10 +58,7 @@ def send_admin_alert(
 
     template = jinja_env.get_template("admin_alert.html")
     html = template.render(
-        subject_title=subject_title,
-        now_str=now_str,
-        error_message=error_message,
-        context_details=context_details
+        subject_title=subject_title, now_str=now_str, error_message=error_message, context_details=context_details
     )
 
     send_email(config, [config.admin_email], subject, html, smtp_client=smtp_client)
@@ -70,8 +66,8 @@ def send_admin_alert(
 
 def send_daily_summary(
     config: AppConfig,
-    stats: Union[SyncStats, dict[str, Any]],
-    updated_items: list[Union[ProcessSummaryEntry, dict[str, Any]]],
+    stats: SyncStats | dict[str, Any],
+    updated_items: list[ProcessSummaryEntry | dict[str, Any]],
     nextcloud_folder: str,
     magic_link_daily: str | None = None,
     magic_link_archive: str | None = None,
@@ -108,7 +104,7 @@ def send_daily_summary(
         updated_items=updated_items,
         nextcloud_folder=nextcloud_folder,
         magic_link_daily=magic_link_daily,
-        magic_link_archive=magic_link_archive
+        magic_link_archive=magic_link_archive,
     )
 
     date_label = now_str.split(" às ")[0]
@@ -154,8 +150,8 @@ class EmailNotifier:
 
     def send_daily_summary(
         self,
-        stats: Union[SyncStats, dict[str, Any]],
-        updated_items: list[Union[ProcessSummaryEntry, dict[str, Any]]],
+        stats: SyncStats | dict[str, Any],
+        updated_items: list[ProcessSummaryEntry | dict[str, Any]],
         nextcloud_folder: str,
         magic_link_daily: str | None = None,
         magic_link_archive: str | None = None,

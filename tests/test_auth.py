@@ -4,8 +4,8 @@ import json
 import pytest
 import requests
 
-from source.auth import extract_tenant_id_from_jwt, login_legalone
-from source.http_client import HTTPClient, RequestsHTTPClient
+from source.infrastructure.legalone.auth import extract_tenant_id_from_jwt, login_legalone
+from source.infrastructure.network.http_client import HTTPClient, RequestsHTTPClient
 
 
 def test_extract_tenant_id_valid():

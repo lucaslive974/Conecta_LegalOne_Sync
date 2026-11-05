@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from source.domain.models import CNJDetails
 
-CNJ_PATTERN = re.compile(
-    r"^\s*(\d{7})[-.]?(\d{2})\.?(\d{4})\.?(\d)\.?(\d{2})\.?(\d{4})\s*$"
-)
+CNJ_PATTERN = re.compile(r"^\s*(\d{7})[-.]?(\d{2})\.?(\d{4})\.?(\d)\.?(\d{2})\.?(\d{4})\s*$")
 
 JUSTICA_RAMOS: dict[str, str] = {
     "1": "Supremo Tribunal Federal",

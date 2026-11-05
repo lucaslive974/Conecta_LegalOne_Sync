@@ -2,9 +2,9 @@ from typing import Any
 
 import requests
 
-from source.client import LegalOneClient
-from source.http_client import HTTPClient, HTTPResponse, RequestsHTTPClient
-from source.nextcloud_client import NextcloudClient
+from source.infrastructure.legalone.client import LegalOneClient
+from source.infrastructure.network.http_client import HTTPClient, HTTPResponse, RequestsHTTPClient
+from source.infrastructure.nextcloud.client import NextcloudClient
 
 
 class FakeResponse:

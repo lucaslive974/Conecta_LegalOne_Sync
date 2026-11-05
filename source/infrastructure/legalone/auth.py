@@ -59,9 +59,7 @@ def login_legalone(
         ),
     }
 
-    payload = {
-        "accessCode": access_code.strip()
-    }
+    payload = {"accessCode": access_code.strip()}
 
     client = http_client or RequestsHTTPClient()
     try:

@@ -1,4 +1,4 @@
-from source.client import LegalOneClient
+from source.infrastructure.legalone.client import LegalOneClient
 
 
 def test_legalone_client_headers():

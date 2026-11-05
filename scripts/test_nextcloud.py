@@ -8,21 +8,26 @@ Usage:
     python scripts/test_nextcloud.py --full-crud
     python scripts/test_nextcloud.py --simulate-failure
 """
-import sys
-import os
+
 import argparse
+import os
+import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from source.config import config
-from source.nextcloud_client import NextcloudClient
+from source.infrastructure.nextcloud.client import NextcloudClient
 
 
 def main():
     parser = argparse.ArgumentParser(description="Teste de Integração com Nextcloud")
-    parser.add_argument("--full-crud", action="store_true", help="Executa ciclo completo: upload, link, move e deleção de teste")
-    parser.add_argument("--simulate-failure", action="store_true", help="Simula falha de autenticação com credenciais incorretas")
+    parser.add_argument(
+        "--full-crud", action="store_true", help="Executa ciclo completo: upload, link, move e deleção de teste"
+    )
+    parser.add_argument(
+        "--simulate-failure", action="store_true", help="Simula falha de autenticação com credenciais incorretas"
+    )
     args = parser.parse_args()
 
     print("==================================================")

@@ -48,15 +48,21 @@ class AppConfig:
     legalone_email: str = field(default_factory=lambda: os.getenv("LEGALONE_EMAIL", ""))
     legalone_password: str = field(default_factory=lambda: os.getenv("LEGALONE_PASSWORD", ""))
     legalone_access_code: str = field(default_factory=lambda: os.getenv("LEGALONE_ACCESS_CODE", ""))
-    legalone_base_url: str = field(default_factory=lambda: os.getenv("LEGALONE_BASE_URL", "https://conecta-api.legalone.com.br"))
+    legalone_base_url: str = field(
+        default_factory=lambda: os.getenv("LEGALONE_BASE_URL", "https://conecta-api.legalone.com.br")
+    )
     legalone_tenant_id: str | None = field(default_factory=lambda: os.getenv("LEGALONE_TENANT_ID") or None)
 
     # Nextcloud
     nextcloud_url: str = field(default_factory=lambda: os.getenv("NEXTCLOUD_URL", "").rstrip("/"))
     nextcloud_user: str = field(default_factory=lambda: os.getenv("NEXTCLOUD_USER", ""))
     nextcloud_password: str = field(default_factory=lambda: os.getenv("NEXTCLOUD_PASSWORD", ""))
-    nextcloud_remote_dir: str = field(default_factory=lambda: os.getenv("NEXTCLOUD_REMOTE_DIR", "Processos_LegalOne").strip("/"))
-    nextcloud_verify_ssl: bool = field(default_factory=lambda: _str_to_bool(os.getenv("NEXTCLOUD_VERIFY_SSL"), default=True))
+    nextcloud_remote_dir: str = field(
+        default_factory=lambda: os.getenv("NEXTCLOUD_REMOTE_DIR", "Processos_LegalOne").strip("/")
+    )
+    nextcloud_verify_ssl: bool = field(
+        default_factory=lambda: _str_to_bool(os.getenv("NEXTCLOUD_VERIFY_SSL"), default=True)
+    )
 
     # SMTP Notifier
     smtp_host: str = field(default_factory=lambda: os.getenv("SMTP_HOST", ""))
@@ -67,7 +73,9 @@ class AppConfig:
     smtp_use_ssl: bool = field(default_factory=lambda: _str_to_bool(os.getenv("SMTP_USE_SSL"), default=False))
     smtp_from: str = field(default_factory=lambda: os.getenv("SMTP_FROM", "LegalOne Sync <noreply@empresa.com.br>"))
     admin_email: str = field(default_factory=lambda: os.getenv("ADMIN_EMAIL", ""))
-    notification_emails: list[str] = field(default_factory=lambda: _parse_email_list(os.getenv("NOTIFICATION_EMAILS", "")))
+    notification_emails: list[str] = field(
+        default_factory=lambda: _parse_email_list(os.getenv("NOTIFICATION_EMAILS", ""))
+    )
 
     # Scheduler & paths
     storage_dir: str = field(
@@ -78,14 +86,14 @@ class AppConfig:
             "DB_PATH", os.path.join(_get_default_base_dir(), "data", "historico_processos.db")
         )
     )
-    temp_dir: str = field(
-        default_factory=lambda: os.getenv("TEMP_DIR", os.path.join(_get_default_base_dir(), "temp"))
-    )
+    temp_dir: str = field(default_factory=lambda: os.getenv("TEMP_DIR", os.path.join(_get_default_base_dir(), "temp")))
     schedule_time: str = field(default_factory=lambda: os.getenv("SCHEDULE_TIME", "07:00"))
     timezone: str = field(default_factory=lambda: os.getenv("TIMEZONE", "America/Sao_Paulo"))
     run_on_startup: bool = field(default_factory=lambda: _str_to_bool(os.getenv("RUN_ON_STARTUP"), default=False))
     page_limit: int = field(default_factory=lambda: int(os.getenv("PAGE_LIMIT", "18")))
-    max_pages: int | None = field(default_factory=lambda: int(os.getenv("MAX_PAGES")) if os.getenv("MAX_PAGES") else None)
+    max_pages: int | None = field(
+        default_factory=lambda: int(os.getenv("MAX_PAGES")) if os.getenv("MAX_PAGES") else None
+    )
 
     def validate_essential_configs(self):
         """Validate that essential configurations required for operation are present."""

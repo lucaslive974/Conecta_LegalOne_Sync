@@ -2,7 +2,6 @@ import logging
 import os
 import urllib.parse
 import xml.etree.ElementTree as ET
-from typing import Optional
 
 from requests.auth import HTTPBasicAuth
 
@@ -33,9 +32,7 @@ class NextcloudClient:
         # Nextcloud OCS Share API endpoint for Magic Links
         self.ocs_share_url = f"{self.base_url}/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
-        self.http_client = http_client or RequestsHTTPClient(
-            auth=self.auth, verify=self.verify_ssl
-        )
+        self.http_client = http_client or RequestsHTTPClient(auth=self.auth, verify=self.verify_ssl)
 
     @property
     def session(self) -> HTTPClient:
@@ -149,10 +146,10 @@ class NextcloudClient:
                     # Extract relative path inside clean_path
                     idx = raw_href.lower().find(prefix)
                     if idx != -1:
-                        rel = raw_href[idx + len(prefix):].strip("/")
+                        rel = raw_href[idx + len(prefix) :].strip("/")
                         if rel:
                             items.append(rel)
-            return sorted(list(set(items)))
+            return sorted(set(items))
         except Exception as e:
             logger.warning("Falha ao listar subitens de %s no Nextcloud: %s", remote_rel_path, e)
             return []
@@ -169,10 +166,7 @@ class NextcloudClient:
         src_url = f"{self.dav_base_url}/{urllib.parse.quote(clean_src)}"
         dst_url = f"{self.dav_base_url}/{urllib.parse.quote(clean_dst)}"
 
-        headers = {
-            "Destination": dst_url,
-            "Overwrite": "T" if overwrite else "F"
-        }
+        headers = {"Destination": dst_url, "Overwrite": "T" if overwrite else "F"}
         try:
             res = self.session.request("MOVE", src_url, headers=headers, timeout=30)
             if res.status_code in (201, 204):
@@ -196,7 +190,7 @@ class NextcloudClient:
             logger.error("Erro ao deletar item %s no Nextcloud: %s", remote_rel_path, e)
             return False
 
-    def get_or_create_public_share(self, remote_rel_path: str) -> Optional[str]:
+    def get_or_create_public_share(self, remote_rel_path: str) -> str | None:
         """
         Get or create a public read-only Magic Link for a Nextcloud directory
         via Nextcloud OCS Share API.
@@ -204,10 +198,7 @@ class NextcloudClient:
         clean_path = remote_rel_path.strip("/")
         self.ensure_directory(clean_path)
 
-        headers = {
-            "OCS-APIRequest": "true",
-            "Accept": "application/json"
-        }
+        headers = {"OCS-APIRequest": "true", "Accept": "application/json"}
 
         # 1. Check if an active public share already exists for this folder
         try:
@@ -223,11 +214,7 @@ class NextcloudClient:
 
         # 2. Otherwise create a new public share (shareType: 3, permissions: 1 = read-only)
         try:
-            payload = {
-                "path": f"/{clean_path}",
-                "shareType": 3,
-                "permissions": 1
-            }
+            payload = {"path": f"/{clean_path}", "shareType": 3, "permissions": 1}
             res = self.session.post(self.ocs_share_url, headers=headers, data=payload, timeout=15)
             if res.status_code == 200:
                 data = res.json().get("ocs", {}).get("data", {})

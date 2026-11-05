@@ -1,4 +1,4 @@
-from source.database import Database
+from source.infrastructure.database.repository import Database
 
 
 def test_database_lifecycle(tmp_path, sample_lawsuit_data):

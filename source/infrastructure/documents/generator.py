@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 from datetime import datetime
-from typing import Any, Union
+from typing import Any
 
 import docx
 from docx.enum.table import WD_TABLE_ALIGNMENT
@@ -13,24 +13,24 @@ from docx.oxml.ns import nsdecls
 from docx.shared import Inches, Pt, RGBColor
 
 from source.domain.cnj import parse_cnj
-from source.domain.models import CNJDetails, Lawsuit, Party, Progress
+from source.domain.models import Lawsuit, Party, Progress
 
 logger = logging.getLogger(__name__)
 
 # Apple-style monochromatic palette
-COLOR_BLACK = RGBColor(29, 29, 31)       # #1D1D1F
-COLOR_DARK = RGBColor(66, 66, 69)        # #424245
-COLOR_MUTED = RGBColor(134, 134, 139)    # #86868B
-HEX_SURFACE = "F5F5F7"                   # #F5F5F7 (Cinza neutro suave)
-HEX_BORDER = "E5E5EA"                    # #E5E5EA (Borda sutil)
-HEX_BLACK = "1D1D1F"                     # #1D1D1F
+COLOR_BLACK = RGBColor(29, 29, 31)  # #1D1D1F
+COLOR_DARK = RGBColor(66, 66, 69)  # #424245
+COLOR_MUTED = RGBColor(134, 134, 139)  # #86868B
+HEX_SURFACE = "F5F5F7"  # #F5F5F7 (Cinza neutro suave)
+HEX_BORDER = "E5E5EA"  # #E5E5EA (Borda sutil)
+HEX_BLACK = "1D1D1F"  # #1D1D1F
 
 
 def sanitize_filename(name: str) -> str:
     """Sanitize names for files and directories."""
     if not name:
         return "SEM_NOME"
-    clean = re.sub(r'[<>:"/\\|?*\n\r\t]', '_', name).strip()
+    clean = re.sub(r'[<>:"/\\|?*\n\r\t]', "_", name).strip()
     return clean[:120] if len(clean) > 120 else clean
 
 
@@ -45,12 +45,12 @@ def set_cell_margins(cell, top=100, bottom=100, left=140, right=140):
     """Set internal margins of a table cell."""
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = parse_xml(
-        f'<w:tcMar {nsdecls("w")}>'
+        f"<w:tcMar {nsdecls('w')}>"
         f'<w:top w:w="{top}" w:type="dxa"/>'
         f'<w:bottom w:w="{bottom}" w:type="dxa"/>'
         f'<w:left w:w="{left}" w:type="dxa"/>'
         f'<w:right w:w="{right}" w:type="dxa"/>'
-        f'</w:tcMar>'
+        f"</w:tcMar>"
     )
     tcPr.append(tcMar)
 
@@ -59,14 +59,14 @@ def set_table_borders(table, color=HEX_BORDER, sz="4"):
     """Apply soft, clean borders to a table."""
     tblPr = table._tbl.tblPr
     borders = parse_xml(
-        f'<w:tblBorders {nsdecls("w")}>'
+        f"<w:tblBorders {nsdecls('w')}>"
         f'<w:top w:val="single" w:sz="{sz}" w:space="0" w:color="{color}"/>'
         f'<w:bottom w:val="single" w:sz="{sz}" w:space="0" w:color="{color}"/>'
         f'<w:insideH w:val="single" w:sz="{sz}" w:space="0" w:color="{color}"/>'
         f'<w:insideV w:val="none"/>'
         f'<w:left w:val="none"/>'
         f'<w:right w:val="none"/>'
-        f'</w:tblBorders>'
+        f"</w:tblBorders>"
     )
     tblPr.append(borders)
 
@@ -113,13 +113,14 @@ class DocumentGenerator:
         p_sub.paragraph_format.space_before = Pt(0)
         p_sub.paragraph_format.space_after = Pt(12)
         is_valid = getattr(cnj_info, "is_valid", cnj_info.get("is_valid") if isinstance(cnj_info, dict) else False)
-        sigla = getattr(cnj_info, "tribunal_sigla", cnj_info.get("tribunal_sigla") if isinstance(cnj_info, dict) else "")
+        sigla = getattr(
+            cnj_info, "tribunal_sigla", cnj_info.get("tribunal_sigla") if isinstance(cnj_info, dict) else ""
+        )
         ano = getattr(cnj_info, "ano", cnj_info.get("ano") if isinstance(cnj_info, dict) else "")
 
         if is_valid:
             sub_meta = (
-                f"Pasta: {pasta}  •  {sigla} ({ano})  •  "
-                f"Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+                f"Pasta: {pasta}  •  {sigla} ({ano})  •  Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
             )
         else:
             sub_meta = f"Pasta: {pasta}  •  Emitido em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
@@ -166,30 +167,28 @@ class DocumentGenerator:
             valor = proc.get("valorCausa")
             status_info = proc.get("status") or {}
             status_nome = (
-                status_info.get("nome")
-                if isinstance(status_info, dict)
-                else str(status_info or "Não informado")
+                status_info.get("nome") if isinstance(status_info, dict) else str(status_info or "Não informado")
             )
             dt_atualizacao = proc.get("dtHrUltimaAtualizacaoDc") or proc.get("dtHrUltimaAtualizacao") or "N/A"
 
         valor_str = (
-            f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-            if valor
-            else "Não informado"
+            f"R$ {valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".") if valor else "Não informado"
         )
 
         is_valid = getattr(cnj_info, "is_valid", cnj_info.get("is_valid") if isinstance(cnj_info, dict) else False)
-        sigla = getattr(cnj_info, "tribunal_sigla", cnj_info.get("tribunal_sigla") if isinstance(cnj_info, dict) else "N/A")
-        nome_trib = getattr(cnj_info, "tribunal_nome", cnj_info.get("tribunal_nome") if isinstance(cnj_info, dict) else "Não informado")
+        sigla = getattr(
+            cnj_info, "tribunal_sigla", cnj_info.get("tribunal_sigla") if isinstance(cnj_info, dict) else "N/A"
+        )
+        nome_trib = getattr(
+            cnj_info, "tribunal_nome", cnj_info.get("tribunal_nome") if isinstance(cnj_info, dict) else "Não informado"
+        )
         ramo = getattr(cnj_info, "ramo", cnj_info.get("ramo") if isinstance(cnj_info, dict) else "N/A")
         ano = getattr(cnj_info, "ano", cnj_info.get("ano") if isinstance(cnj_info, dict) else "N/A")
-        origem_cod = getattr(cnj_info, "origem_codigo", cnj_info.get("origem_codigo") if isinstance(cnj_info, dict) else "N/A")
-
-        tribunal_display = (
-            f"{sigla} - {nome_trib}"
-            if is_valid
-            else nome_trib
+        origem_cod = getattr(
+            cnj_info, "origem_codigo", cnj_info.get("origem_codigo") if isinstance(cnj_info, dict) else "N/A"
         )
+
+        tribunal_display = f"{sigla} - {nome_trib}" if is_valid else nome_trib
 
         meta_fields = [
             ("Número CNJ", cnj, "ID Conecta", str(p_id)),
@@ -355,9 +354,7 @@ class DocumentGenerator:
             r.font.color.rgb = COLOR_BLACK
 
         if not andamentos:
-            p_none = doc.add_paragraph(
-                "Nenhum andamento ou publicação registrado para este processo até o momento."
-            )
+            p_none = doc.add_paragraph("Nenhum andamento ou publicação registrado para este processo até o momento.")
             p_none.runs[0].font.italic = True
             p_none.runs[0].font.size = Pt(9)
             p_none.runs[0].font.color.rgb = COLOR_MUTED
@@ -431,7 +428,7 @@ class DocumentGenerator:
         run_ft.font.size = Pt(7.5)
         run_ft.font.color.rgb = COLOR_MUTED
 
-    def generate_process_docx(self, proc: Union[Lawsuit, dict[str, Any]], output_path: str) -> str:
+    def generate_process_docx(self, proc: Lawsuit | dict[str, Any], output_path: str) -> str:
         """Create a lawsuit report in minimalist DOCX format."""
         doc = docx.Document()
         self._setup_document_margins(doc)
@@ -500,7 +497,7 @@ class DocumentGenerator:
             logger.error("Falha ao converter DOCX para PDF via LibreOffice: %s", e)
             return None
 
-    def render_process_documents(self, proc: Union[Lawsuit, dict[str, Any]], base_name: str) -> tuple[str, str | None]:
+    def render_process_documents(self, proc: Lawsuit | dict[str, Any], base_name: str) -> tuple[str, str | None]:
         """Render both DOCX and PDF in temporary folder and return (docx_path, pdf_path)."""
         safe_name = sanitize_filename(base_name)
         docx_path = os.path.join(self.temp_dir, f"{safe_name}.docx")

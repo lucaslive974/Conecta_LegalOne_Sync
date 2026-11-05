@@ -5,15 +5,16 @@ Test script for DOCX report generation and PDF conversion via LibreOffice.
 Usage:
     python scripts/test_document_generation.py
 """
-import sys
-import os
+
 import json
+import os
 import sqlite3
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from source.config import config
-from source.document_generator import DocumentGenerator
+from source.infrastructure.documents.generator import DocumentGenerator
 
 
 def get_sample_process():
@@ -46,14 +47,14 @@ def get_sample_process():
                 "id": 1,
                 "isPrincipal": True,
                 "posicaoEnvolvido": {"descricao": "Autor"},
-                "agnContato": {"nome": "Parte Autora Mock", "cpfCnpj": "000.000.000-00"}
+                "agnContato": {"nome": "Parte Autora Mock", "cpfCnpj": "000.000.000-00"},
             },
             {
                 "id": 2,
                 "isPrincipal": True,
                 "posicaoEnvolvido": {"descricao": "Réu"},
-                "agnContato": {"nome": "Empresa Exemplo S.A.", "cpfCnpj": "00.000.000/0001-00"}
-            }
+                "agnContato": {"nome": "Empresa Exemplo S.A.", "cpfCnpj": "00.000.000/0001-00"},
+            },
         ],
         "progresses": [
             {
@@ -62,7 +63,7 @@ def get_sample_process():
                 "strHora": "08:45",
                 "source": "Diário Oficial da Justiça",
                 "nomeCaderno": "Judiciário - 1ª Instância",
-                "descricao": "Disponibilizada a intimação das partes para manifestação sobre o laudo pericial contábil apresentado no evento 45, no prazo comum de 15 (quinze) dias úteis."
+                "descricao": "Disponibilizada a intimação das partes para manifestação sobre o laudo pericial contábil apresentado no evento 45, no prazo comum de 15 (quinze) dias úteis.",
             },
             {
                 "id": 102,
@@ -70,9 +71,9 @@ def get_sample_process():
                 "strHora": "14:10",
                 "source": "Sistema Judicial PJe",
                 "nomeCaderno": None,
-                "descricao": "Juntada de manifestação e quesitos complementares formulados pelo patrono da reclamada."
-            }
-        ]
+                "descricao": "Juntada de manifestação e quesitos complementares formulados pelo patrono da reclamada.",
+            },
+        ],
     }
     return mock, "Dados Mock (Simulação)"
 

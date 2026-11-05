@@ -1,8 +1,7 @@
-
 import pytest
 import requests
 
-from source.nextcloud_client import NextcloudClient
+from source.infrastructure.nextcloud.client import NextcloudClient
 
 
 def test_nextcloud_test_connection_success(mocker):
@@ -164,9 +163,7 @@ def test_get_or_create_public_share_existing(mocker):
 
     mock_resp = mocker.MagicMock()
     mock_resp.status_code = 200
-    mock_resp.json.return_value = {
-        "ocs": {"data": [{"share_type": 3, "url": "https://nc.test/s/ACTIVE_LINK"}]}
-    }
+    mock_resp.json.return_value = {"ocs": {"data": [{"share_type": 3, "url": "https://nc.test/s/ACTIVE_LINK"}]}}
 
     mocker.patch.object(nc.session, "get", return_value=mock_resp)
 

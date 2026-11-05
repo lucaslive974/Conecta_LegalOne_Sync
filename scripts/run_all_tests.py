@@ -6,9 +6,10 @@ Runs all unit and integration tests sequentially.
 Usage:
     python scripts/run_all_tests.py
 """
-import sys
+
 import os
 import subprocess
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -30,9 +31,7 @@ def main():
     results = {}
 
     # 1. SMTP Test
-    results["1. Conexão SMTP (Porta 465 SSL)"] = run_subtest(
-        "Teste de Conexão e Autenticação SMTP", "test_smtp.py"
-    )
+    results["1. Conexão SMTP (Porta 465 SSL)"] = run_subtest("Teste de Conexão e Autenticação SMTP", "test_smtp.py")
 
     # 2. Nextcloud WebDAV + Magic Links Test
     results["2. Nextcloud WebDAV & Magic Links"] = run_subtest(

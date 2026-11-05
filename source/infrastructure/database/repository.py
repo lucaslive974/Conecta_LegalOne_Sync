@@ -3,7 +3,7 @@ import logging
 import os
 import sqlite3
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any
 
 from source.domain.models import Lawsuit, ProcessSyncInfo
 
@@ -41,7 +41,7 @@ class Database:
         with self.conn:
             self.conn.executescript(SQL_SCHEMA)
 
-    def get_process_sync_info(self, process_id: int) -> Optional[ProcessSyncInfo]:
+    def get_process_sync_info(self, process_id: int) -> ProcessSyncInfo | None:
         cur = self.conn.cursor()
         cur.execute(SQL_GET_SYNC_INFO, (process_id,))
         row = cur.fetchone()
@@ -52,7 +52,7 @@ class Database:
             )
         return None
 
-    def save_process(self, proc: Union[Lawsuit, dict[str, Any]], pub_id: Optional[int] = None):
+    def save_process(self, proc: Lawsuit | dict[str, Any], pub_id: int | None = None):
         """Save or update lawsuit record, contacts, and progresses."""
         if isinstance(proc, Lawsuit):
             p_id = proc.id
@@ -68,23 +68,43 @@ class Database:
             now = datetime.now().isoformat()
 
             with self.conn:
-                self.conn.execute(SQL_UPSERT_PROCESS, (
-                    p_id, adv_pub, cnj, pasta, valor, status_nome,
-                    dt_atualizacao, dt_cadastro, recent_act,
-                    raw_json, now
-                ))
+                self.conn.execute(
+                    SQL_UPSERT_PROCESS,
+                    (
+                        p_id,
+                        adv_pub,
+                        cnj,
+                        pasta,
+                        valor,
+                        status_nome,
+                        dt_atualizacao,
+                        dt_cadastro,
+                        recent_act,
+                        raw_json,
+                        now,
+                    ),
+                )
 
                 for c in proc.partes:
-                    self.conn.execute(SQL_UPSERT_CONTACT, (
-                        None, p_id, c.nome, None, c.posicao, c.is_main_party
-                    ))
+                    self.conn.execute(SQL_UPSERT_CONTACT, (None, p_id, c.nome, None, c.posicao, c.is_main_party))
 
                 for andam in proc.andamentos:
-                    self.conn.execute(SQL_UPSERT_PROGRESS, (
-                        andam.id, p_id, None, andam.data, andam.hora,
-                        andam.tipo_origem, andam.origem, andam.descricao,
-                        None, None, None
-                    ))
+                    self.conn.execute(
+                        SQL_UPSERT_PROGRESS,
+                        (
+                            andam.id,
+                            p_id,
+                            None,
+                            andam.data,
+                            andam.hora,
+                            andam.tipo_origem,
+                            andam.origem,
+                            andam.descricao,
+                            None,
+                            None,
+                            None,
+                        ),
+                    )
         else:
             proc_data = proc
             p_id = proc_data.get("id")
@@ -100,30 +120,59 @@ class Database:
             now = datetime.now().isoformat()
 
             with self.conn:
-                self.conn.execute(SQL_UPSERT_PROCESS, (
-                    p_id, adv_pub, cnj, pasta, valor, status_nome,
-                    dt_atualizacao, dt_cadastro, recent_act,
-                    json.dumps(proc_data, ensure_ascii=False), now
-                ))
+                self.conn.execute(
+                    SQL_UPSERT_PROCESS,
+                    (
+                        p_id,
+                        adv_pub,
+                        cnj,
+                        pasta,
+                        valor,
+                        status_nome,
+                        dt_atualizacao,
+                        dt_cadastro,
+                        recent_act,
+                        json.dumps(proc_data, ensure_ascii=False),
+                        now,
+                    ),
+                )
 
                 contatos = proc_data.get("contatos") or []
                 for c in contatos:
                     cid = c.get("id")
                     agn = c.get("agnContato") or {}
                     pos = c.get("posicaoEnvolvido") or {}
-                    self.conn.execute(SQL_UPSERT_CONTACT, (
-                        cid, p_id, agn.get("nome"), agn.get("cpfCnpj"),
-                        pos.get("descricao"), bool(c.get("isPrincipal"))
-                    ))
+                    self.conn.execute(
+                        SQL_UPSERT_CONTACT,
+                        (
+                            cid,
+                            p_id,
+                            agn.get("nome"),
+                            agn.get("cpfCnpj"),
+                            pos.get("descricao"),
+                            bool(c.get("isPrincipal")),
+                        ),
+                    )
 
                 andamentos = proc_data.get("recentProgresses") or proc_data.get("progresses") or []
                 for andam in andamentos:
                     aid = andam.get("id")
-                    self.conn.execute(SQL_UPSERT_PROGRESS, (
-                        aid, p_id, andam.get("dtHrAndamento"), andam.get("strData"), andam.get("strHora"),
-                        andam.get("tipoOrigem"), andam.get("source"), andam.get("descricao"),
-                        andam.get("checksum"), andam.get("caminhoPDF"), andam.get("dtHrCadastro")
-                    ))
+                    self.conn.execute(
+                        SQL_UPSERT_PROGRESS,
+                        (
+                            aid,
+                            p_id,
+                            andam.get("dtHrAndamento"),
+                            andam.get("strData"),
+                            andam.get("strHora"),
+                            andam.get("tipoOrigem"),
+                            andam.get("source"),
+                            andam.get("descricao"),
+                            andam.get("checksum"),
+                            andam.get("caminhoPDF"),
+                            andam.get("dtHrCadastro"),
+                        ),
+                    )
 
     def get_process_parties_summary(self, process_id: int) -> dict[str, list[str]]:
         cur = self.conn.cursor()

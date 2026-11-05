@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -35,7 +35,7 @@ class Party:
     is_main_party: bool = True
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> Optional[Party]:
+    def from_dict(cls, data: dict[str, Any]) -> Party | None:
         pos = (data.get("posicaoEnvolvido") or {}).get("descricao", "").strip()
         agn = data.get("agnContato") or {}
         nome = (agn.get("nome") or "").strip()
@@ -46,7 +46,8 @@ class Party:
         # Não classifica advogados ou responsáveis internos como polo principal do litígio
         is_internal = any(ign in pos_lower for ign in ["responsável", "responsavel", "advogado", "patrono"])
         is_dispute = any(
-            p in pos_lower for p in ["autor", "réu", "reu", "exequente", "executado", "embargante", "embargado", "parte"]
+            p in pos_lower
+            for p in ["autor", "réu", "reu", "exequente", "executado", "embargante", "embargado", "parte"]
         )
 
         is_main = is_dispute and not is_internal
@@ -57,13 +58,13 @@ class Party:
 class Progress:
     """Andamento ou publicação registrado no histórico do processo."""
 
-    id: Optional[int] = None
+    id: int | None = None
     data: str = ""
     hora: str = ""
     origem: str = "Sistema Judicial"
-    caderno: Optional[str] = None
+    caderno: str | None = None
     descricao: str = ""
-    tipo_origem: Optional[int] = None
+    tipo_origem: int | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Progress:
@@ -93,13 +94,13 @@ class Lawsuit:
     id: int
     cnj: str
     cnj_info: CNJDetails
-    pasta: Optional[str] = None
-    valor_causa: Optional[float] = None
+    pasta: str | None = None
+    valor_causa: float | None = None
     status_nome: str = "Ativo"
-    data_distribuicao: Optional[str] = None
-    data_fechamento: Optional[str] = None
-    dt_hr_ultima_atualizacao: Optional[str] = None
-    id_adv_publication: Optional[int] = None
+    data_distribuicao: str | None = None
+    data_fechamento: str | None = None
+    dt_hr_ultima_atualizacao: str | None = None
+    id_adv_publication: int | None = None
     partes: list[Party] = field(default_factory=list)
     andamentos: list[Progress] = field(default_factory=list)
     raw_data: dict[str, Any] = field(default_factory=dict)
@@ -114,7 +115,7 @@ class Lawsuit:
         names = [p.nome for p in self.partes if p.is_main_party]
         if not names:
             return ["Partes_Nao_Identificadas"]
-        return sorted(list(set(names)))
+        return sorted(set(names))
 
     @property
     def parties_label(self) -> str:
@@ -126,7 +127,7 @@ class Lawsuit:
         return "Processo"
 
     @property
-    def last_progress(self) -> Optional[Progress]:
+    def last_progress(self) -> Progress | None:
         return self.andamentos[0] if self.andamentos else None
 
     @property
@@ -140,7 +141,7 @@ class Lawsuit:
         return f"[{d} - {orig}] {desc}..."
 
     @classmethod
-    def from_api_dict(cls, data: dict[str, Any], cnj_info: Optional[CNJDetails] = None) -> Lawsuit:
+    def from_api_dict(cls, data: dict[str, Any], cnj_info: CNJDetails | None = None) -> Lawsuit:
         from source.domain.cnj import parse_cnj
 
         raw_id = data.get("id") or 0
@@ -181,8 +182,8 @@ class Lawsuit:
 class ProcessSyncInfo:
     """Informações para validação de sincronização incremental no banco de dados."""
 
-    dt_hr_ultima_atualizacao: Optional[str]
-    id_adv_publication: Optional[int]
+    dt_hr_ultima_atualizacao: str | None
+    id_adv_publication: int | None
 
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
@@ -228,5 +229,5 @@ class StorageContext:
 
     daily_folder: str
     archive_folder: str
-    magic_link_daily: Optional[str] = None
-    magic_link_archive: Optional[str] = None
+    magic_link_daily: str | None = None
+    magic_link_archive: str | None = None

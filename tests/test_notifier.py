@@ -1,12 +1,12 @@
 import pytest
 
 from source.config import AppConfig
-from source.notifier import (
+from source.infrastructure.email.notifier import (
     send_admin_alert,
     send_daily_summary,
     send_email,
 )
-from source.notifier import (
+from source.infrastructure.email.notifier import (
     test_smtp_connection as check_smtp_connection,
 )
 

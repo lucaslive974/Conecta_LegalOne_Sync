@@ -1,8 +1,8 @@
 import pytest
 
 from source.config import AppConfig
-from source.notifier import EmailNotifier
-from source.smtp_client import SMTPClient, StandardSMTPClient
+from source.infrastructure.email.notifier import EmailNotifier
+from source.infrastructure.email.smtp_client import SMTPClient, StandardSMTPClient
 
 
 class FakeSMTPClient:
@@ -20,12 +20,14 @@ class FakeSMTPClient:
         html_content: str,
         text_content: str | None = None,
     ) -> None:
-        self.sent_emails.append({
-            "to": to_addresses,
-            "subject": subject,
-            "html": html_content,
-            "text": text_content,
-        })
+        self.sent_emails.append(
+            {
+                "to": to_addresses,
+                "subject": subject,
+                "html": html_content,
+                "text": text_content,
+            }
+        )
 
 
 def test_smtp_client_protocol_conformance(mock_config):

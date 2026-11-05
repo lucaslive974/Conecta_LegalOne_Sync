@@ -1,14 +1,14 @@
+from source.domain.cnj import parse_cnj
 from source.domain.models import (
     CNJDetails,
-    Party,
-    Progress,
     Lawsuit,
-    ProcessSyncInfo,
+    Party,
     ProcessSummaryEntry,
-    SyncStats,
+    ProcessSyncInfo,
+    Progress,
     StorageContext,
+    SyncStats,
 )
-from source.domain.cnj import parse_cnj
 
 __all__ = [
     "CNJDetails",

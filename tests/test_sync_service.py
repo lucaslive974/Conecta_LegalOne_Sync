@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from source.sync_service import (
+from source.services.sync_service import (
     NextcloudStorageContext,
     SyncService,
     build_process_summary_entry,
@@ -71,11 +71,7 @@ def test_format_last_progress_summary():
 
 
 def test_build_process_summary_entry():
-    proc = {
-        "recentProgresses": [
-            {"strData": "01/01/2026", "source": "Diário", "descricao": "Publicação de sentença"}
-        ]
-    }
+    proc = {"recentProgresses": [{"strData": "01/01/2026", "source": "Diário", "descricao": "Publicação de sentença"}]}
     cnj = "5003140-58.2023.8.13.0439"
     parties = ["Autor Teste", "Réu Teste"]
 
@@ -229,12 +225,8 @@ def test_generate_and_store_reports(mock_config, tmp_path, mocker):
 
     # Uploads: 2 in archive (1 per party) + 2 in daily (1 per party)
     assert mock_nc.upload_file.call_count == 4
-    mock_nc.upload_file.assert_any_call(
-        mocker.ANY, "/Arquivo/Empresa Alfa/5003140_58_2023_8_13_0439_Relatorio.pdf"
-    )
-    mock_nc.upload_file.assert_any_call(
-        mocker.ANY, "/Novos/Empresa Alfa/5003140_58_2023_8_13_0439_Relatorio.pdf"
-    )
+    mock_nc.upload_file.assert_any_call(mocker.ANY, "/Arquivo/Empresa Alfa/5003140_58_2023_8_13_0439_Relatorio.pdf")
+    mock_nc.upload_file.assert_any_call(mocker.ANY, "/Novos/Empresa Alfa/5003140_58_2023_8_13_0439_Relatorio.pdf")
     service.db.close()
 
 
@@ -264,12 +256,16 @@ def test_scan_lawsuit_pages_with_updates(mock_config, tmp_path, mocker):
 
     # Mock lawsuit generation
     mocker.patch.object(service, "_is_process_up_to_date", return_value=False)
-    mocker.patch.object(service, "_fetch_process_details", return_value={
-        "id": 999,
-        "numeroCNJ": "5003140-58.2023.8.13.0439",
-        "recentProgresses": [{"strData": "01/01/2026", "descricao": "Movimentacao"}],
-        "contatos": [{"posicaoEnvolvido": {"descricao": "Autor"}, "agnContato": {"nome": "Autor Teste"}}],
-    })
+    mocker.patch.object(
+        service,
+        "_fetch_process_details",
+        return_value={
+            "id": 999,
+            "numeroCNJ": "5003140-58.2023.8.13.0439",
+            "recentProgresses": [{"strData": "01/01/2026", "descricao": "Movimentacao"}],
+            "contatos": [{"posicaoEnvolvido": {"descricao": "Autor"}, "agnContato": {"nome": "Autor Teste"}}],
+        },
+    )
     mocker.patch.object(service, "_generate_and_store_reports", return_value=True)
 
     stats, summary_items = service._scan_lawsuit_pages(mock_client, mock_nc, storage)
@@ -280,4 +276,3 @@ def test_scan_lawsuit_pages_with_updates(mock_config, tmp_path, mocker):
     assert len(summary_items) == 1
     assert summary_items[0]["cnj"] == "5003140-58.2023.8.13.0439"
     service.db.close()
-

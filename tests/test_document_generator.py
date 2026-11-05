@@ -2,8 +2,8 @@ import os
 
 import docx
 
-from source.cnj_parser import parse_cnj
-from source.document_generator import DocumentGenerator, sanitize_filename
+from source.domain.cnj import parse_cnj
+from source.infrastructure.documents.generator import DocumentGenerator, sanitize_filename
 
 
 def test_sanitize_filename():

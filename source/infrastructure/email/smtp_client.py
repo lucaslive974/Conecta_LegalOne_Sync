@@ -40,13 +40,9 @@ class StandardSMTPClient:
             raise ValueError("SMTP_HOST não foi configurado.")
 
         if self.config.smtp_use_ssl:
-            server: smtplib.SMTP = smtplib.SMTP_SSL(
-                self.config.smtp_host, self.config.smtp_port, timeout=timeout
-            )
+            server: smtplib.SMTP = smtplib.SMTP_SSL(self.config.smtp_host, self.config.smtp_port, timeout=timeout)
         else:
-            server = smtplib.SMTP(
-                self.config.smtp_host, self.config.smtp_port, timeout=timeout
-            )
+            server = smtplib.SMTP(self.config.smtp_host, self.config.smtp_port, timeout=timeout)
 
         server.ehlo()
         if self.config.smtp_use_tls and not self.config.smtp_use_ssl:

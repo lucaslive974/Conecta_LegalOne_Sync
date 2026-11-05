@@ -4,17 +4,14 @@ import logging
 import os
 import shutil
 from datetime import datetime
-from typing import Any, Union
+from typing import Any
 
 from source.config import AppConfig
 from source.domain.cnj import parse_cnj
 from source.domain.models import (
     Lawsuit,
-    Party,
-    Progress,
     ProcessSummaryEntry,
     StorageContext,
-    SyncStats,
 )
 from source.infrastructure.database.repository import Database
 from source.infrastructure.documents.generator import DocumentGenerator, sanitize_filename
@@ -31,7 +28,7 @@ logger = logging.getLogger(__name__)
 NextcloudStorageContext = StorageContext
 
 
-def extract_party_names(proc: Union[Lawsuit, dict[str, Any]]) -> list[str]:
+def extract_party_names(proc: Lawsuit | dict[str, Any]) -> list[str]:
     """
     Extract main plaintiff and defendant party names.
     Deliberately ignores 'Responsável' or 'Advogado' contacts to prevent
@@ -59,7 +56,7 @@ def extract_party_names(proc: Union[Lawsuit, dict[str, Any]]) -> list[str]:
     return sorted(parties)
 
 
-def format_parties_label(parties: Union[list[str], Lawsuit]) -> str:
+def format_parties_label(parties: list[str] | Lawsuit) -> str:
     """Format short summary parties string for daily files and summaries."""
     if isinstance(parties, Lawsuit):
         return parties.parties_label
@@ -70,7 +67,7 @@ def format_parties_label(parties: Union[list[str], Lawsuit]) -> str:
     return "Processo"
 
 
-def format_last_progress_summary(proc: Union[Lawsuit, dict[str, Any]]) -> str:
+def format_last_progress_summary(proc: Lawsuit | dict[str, Any]) -> str:
     """Extract and format the most recent progress entry into a concise text."""
     if isinstance(proc, Lawsuit):
         return proc.last_progress_summary
@@ -86,9 +83,7 @@ def format_last_progress_summary(proc: Union[Lawsuit, dict[str, Any]]) -> str:
     return f"[{d} - {orig}] {desc}..."
 
 
-def build_process_summary_entry(
-    proc: Union[Lawsuit, dict[str, Any]], cnj: str, parties: list[str]
-) -> ProcessSummaryEntry:
+def build_process_summary_entry(proc: Lawsuit | dict[str, Any], cnj: str, parties: list[str]) -> ProcessSummaryEntry:
     """Build summary domain item for the daily email notification."""
     cnj_info = proc.cnj_info if isinstance(proc, Lawsuit) else parse_cnj(cnj)
     tribunal = cnj_info.tribunal_sigla if cnj_info.is_valid else ""
@@ -219,7 +214,7 @@ class SyncService:
 
     def _is_process_up_to_date(
         self,
-        item: Union[Lawsuit, dict[str, Any]],
+        item: Lawsuit | dict[str, Any],
         first_party: str,
         safe_cnj: str,
         archive_folder: str,
@@ -271,8 +266,8 @@ class SyncService:
         return False
 
     def _fetch_process_details(
-        self, client: LegalOneClient, item: Union[Lawsuit, dict[str, Any]]
-    ) -> Union[Lawsuit, dict[str, Any]]:
+        self, client: LegalOneClient, item: Lawsuit | dict[str, Any]
+    ) -> Lawsuit | dict[str, Any]:
         """Fetch detailed publication and progress history for a lawsuit."""
         pub_id = item.id_adv_publication if isinstance(item, Lawsuit) else item.get("id_adv_publication")
         if not pub_id:
@@ -291,7 +286,7 @@ class SyncService:
 
     def _generate_and_store_reports(
         self,
-        proc_full: Union[Lawsuit, dict[str, Any]],
+        proc_full: Lawsuit | dict[str, Any],
         safe_cnj: str,
         parties: list[str],
         daily_folder: str,
@@ -302,10 +297,12 @@ class SyncService:
         Generate DOCX/PDF reports, save local backups grouped by party,
         and upload PDF to Nextcloud archive and daily folders.
         """
-        cnj = proc_full.cnj if isinstance(proc_full, Lawsuit) else (proc_full.get("numeroCNJ") or f"ID_{proc_full.get('id')}")
-        docx_tmp, pdf_tmp = self.doc_generator.render_process_documents(
-            proc_full, base_name=f"{safe_cnj}_Relatorio"
+        cnj = (
+            proc_full.cnj
+            if isinstance(proc_full, Lawsuit)
+            else (proc_full.get("numeroCNJ") or f"ID_{proc_full.get('id')}")
         )
+        docx_tmp, pdf_tmp = self.doc_generator.render_process_documents(proc_full, base_name=f"{safe_cnj}_Relatorio")
 
         if not pdf_tmp or not os.path.exists(pdf_tmp):
             logger.error("Falha ao gerar PDF para o processo: %s", cnj)
@@ -351,7 +348,7 @@ class SyncService:
 
     def _process_single_lawsuit(
         self,
-        item: Union[Lawsuit, dict[str, Any]],
+        item: Lawsuit | dict[str, Any],
         client: LegalOneClient,
         nc_client: NextcloudClient,
         storage: StorageContext,

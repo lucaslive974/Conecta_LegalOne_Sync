@@ -45,9 +45,7 @@ def parse_schedule_time(schedule_time: str) -> tuple[int, int]:
 
 def parse_args(args: list[str] | None = None) -> argparse.Namespace:
     """Parse CLI command line arguments."""
-    parser = argparse.ArgumentParser(
-        description="LegalOne Sync - Sincronizador Automático de Processos"
-    )
+    parser = argparse.ArgumentParser(description="LegalOne Sync - Sincronizador Automático de Processos")
     parser.add_argument(
         "--test-smtp",
         action="store_true",
@@ -110,7 +108,9 @@ def bootstrap_checks(app_config: AppConfig) -> None:
     try:
         verify_nextcloud_bootstrap(app_config)
     except Exception as e:
-        logging.critical("✕ FATAL: O teste de conexão com o Nextcloud falhou. A aplicação não inicializará.\nErro: %s", e)
+        logging.critical(
+            "✕ FATAL: O teste de conexão com o Nextcloud falhou. A aplicação não inicializará.\nErro: %s", e
+        )
         try:
             send_admin_alert(
                 config=app_config,

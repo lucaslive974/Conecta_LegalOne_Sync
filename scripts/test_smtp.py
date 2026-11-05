@@ -8,16 +8,17 @@ Usage:
     python scripts/test_smtp.py --send-test
     python scripts/test_smtp.py --simulate-failure
 """
-import sys
-import os
+
 import argparse
+import os
+import sys
 from datetime import datetime
 
 # Ensure access to source package modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from source.config import config, AppConfig
-from source.notifier import test_smtp_connection, send_email
+from source.config import AppConfig, config
+from source.infrastructure.email.notifier import send_email, test_smtp_connection
 
 
 def main():
@@ -37,7 +38,7 @@ def main():
             smtp_host="servidor-invalido-inexistente.com.br",
             smtp_port=587,
             smtp_user="usuario_falso",
-            smtp_password="senha_errada"
+            smtp_password="senha_errada",
         )
         print("    Simulando com host inválido:", target_config.smtp_host)
 
