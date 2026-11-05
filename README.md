@@ -1,161 +1,210 @@
 # ⚖️ Conecta LegalOne Sync (Enterprise Edition)
 
-Serviço corporativo de sincronização automática, monitoramento processual, geração de relatórios estruturados (**DOCX** e **PDF**) e espelhamento em nuvem privada (**Nextcloud via WebDAV**), com alertas em tempo real e notificações por e-mail (**SMTP**).
+Enterprise service for automated synchronization, judicial monitoring, structured report generation (**DOCX** and **PDF**), and private cloud mirroring (**Nextcloud via WebDAV**), featuring real-time critical alerts and daily summary emails (**SMTP**).
 
 ---
 
-## 🚀 Fluxo Operacional Diário (07:00 AM)
+## 🚀 Daily Operational Workflow (07:00 AM)
 
 ```
 [ Host Linux / Crontab (07:00) ]
                │
                ▼
-[ Docker: Bootstrap & SMTP Test ] ──(Falha de Conexão SMTP)──> [ Aborta Inicialização ]
-               │ (Sucesso)
+[ Docker: Bootstrap & SMTP Test ] ──(SMTP Failure)──> [ Abort Startup ]
+               │ (Success)
                ▼
-   [ Autenticação LegalOne ] ──(Falha de Login)──> [ Envia E-mail de Alerta ao ADMIN ]
-               │ (Sucesso)
+   [ LegalOne Authentication ] ──(Login Failure)──> [ Send Alert Email to ADMIN ]
+               │ (Success)
                ▼
-   [ Conexão WebDAV Nextcloud ] ──(Falha no Servidor)──> [ Envia E-mail de Alerta ao ADMIN ]
-               │ (Sucesso)
+   [ Nextcloud WebDAV Check ] ──(Server Failure)──> [ Send Alert Email to ADMIN ]
+               │ (Success)
                ▼
-[ Varredura Incremental de Processos ]
+[ Incremental Lawsuits Scan ]
                │
        ┌───────┴────────────────────────┐
        ▼                                ▼
-[ Inalterado ]                [ Novo ou com Atualização ]
+[ Unchanged ]                  [ New or Updated ]
        │                                │
- (Verifica Cópia Local           (Baixa Andamentos Completos)
- e Espelho no Nextcloud)                │
+ (Verifies Local Disk           (Fetch Detailed Progress)
+ and Nextcloud Mirror)                  │
        │                                ▼
-       │                    [ Salva no Banco SQLite ]
-       │                                │
-       │                                ▼
-       │                    [ Gera Relatório DOCX ]
+       │                    [ Save to SQLite Database ]
        │                                │
        │                                ▼
-       │                    [ Renderiza PDF com LibreOffice ]
+       │                    [ Generate DOCX Report ]
+       │                                │
+       │                                ▼
+       │                    [ Render PDF via LibreOffice ]
        │                                │
        └───────┬────────────────────────┘
                ▼
-[ Espelhamento Automático no Nextcloud ] (Recria se foi deletado)
+[ Automatic Nextcloud Mirroring ] (Auto-heals missing remote files)
                │
                ▼
-[ Envio do Relatório Diário por E-mail para Usuários ]
+[ Send Daily Summary Email with Magic Links to Stakeholders ]
                │
                ▼
-          [ Conclusão ]
+          [ Finished ]
 ```
 
 ---
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```text
 Conecta_LegalOne_Sync/
-├── Dockerfile                  <- Imagem Docker pronta com LibreOffice e Python 3.12
-├── docker-compose.yml          <- Orquestração do serviço com volumes de dados persistentes
-├── requirements.txt            <- Dependências Python (requests, python-docx, apscheduler, etc.)
-├── .env.example                <- Modelo de variáveis de ambiente com documentação detalhada
-├── .gitignore                  <- Proteção de senhas, banco local e temporários
-├── .venv/                      <- Ambiente virtual Python local
-├── data/                       <- Persistência do banco SQLite (historico_processos.db)
-├── storage/                    <- Cópia local espelhada dos arquivos DOCX e PDF
-├── temp/                       <- Área temporária de renderização
-└── source/                     <- Código-fonte modular refatorado
+├── Dockerfile                  <- Production Docker image with LibreOffice and Python 3.12+
+├── docker-compose.yml          <- Service orchestration with persistent data volumes
+├── pyproject.toml              <- Build system, dependencies, ruff lint and pytest-cov configuration
+├── requirements.txt            <- Core Python dependencies
+├── .env.example                <- Environment variables template with comprehensive documentation
+├── .gitignore                  <- Protection for secrets, local databases, and temporary files
+├── .venv/                      <- Local virtual environment
+├── data/                       <- SQLite database persistence (legalone_sync.db)
+├── storage/                    <- Permanent local backup organized by party (Processos/<Party>/)
+├── temp/                       <- Temporary render workspace
+├── tests/                      <- Comprehensive test suite (87+ unit tests, 92% coverage)
+│   ├── test_auth.py
+│   ├── test_client.py
+│   ├── test_cnj_parser.py
+│   ├── test_config.py
+│   ├── test_database.py
+│   ├── test_document_generator.py
+│   ├── test_http_client.py
+│   ├── test_main.py
+│   ├── test_nextcloud_client.py
+│   ├── test_notifier.py
+│   ├── test_smtp_client.py
+│   └── test_sync_service.py
+└── source/                     <- Modularized clean-architecture codebase
     ├── __init__.py
-    ├── config.py               <- Validação e carregamento de variáveis de ambiente
-    ├── auth.py                 <- Autenticação Basic Auth e extração de JWT do LegalOne
-    ├── client.py               <- Cliente HTTP da API Conecta LegalOne
-    ├── database.py             <- Gerenciamento de histórico incremental em SQLite
-    ├── document_generator.py   <- Geração de DOCX corporativo e conversão para PDF
-    ├── nextcloud_client.py     <- Cliente WebDAV com criação recursiva de pastas e uploads
-    ├── notifier.py             <- Teste de bootstrap SMTP, alertas de erro e resumo diário
-    ├── sync_service.py         <- Pipeline principal de sincronização e espelhamento
-    └── main.py                 <- Ponto de entrada CLI e verificação de inicialização
+    ├── config.py               <- Environment variable loading and validation
+    ├── auth.py                 <- Basic Auth and JWT tenantId extraction for LegalOne
+    ├── client.py               <- LegalOne API client with pluggable HTTP transport
+    ├── cnj_parser.py           <- CNJ lawsuit number parser (Court, Judicial Branch, Year)
+    ├── database.py             <- SQLite incremental state management with external SQL files
+    ├── document_generator.py   <- Apple-style minimalist DOCX and LibreOffice headless PDF renderer
+    ├── http_client.py          <- Abstract HTTPClient protocol & Requests implementation
+    ├── nextcloud_client.py     <- WebDAV & OCS Share API client for Nextcloud
+    ├── notifier.py             <- Email notifications & Jinja2 template rendering
+    ├── smtp_client.py          <- Abstract SMTPClient protocol & Standard smtplib implementation
+    ├── sync_service.py         <- Core orchestration service for incremental sync & mirroring
+    ├── main.py                 <- CLI entrypoint with single-run and daemon scheduling modes
+    ├── sql/                    <- Decoupled SQL schemas and queries
+    │   ├── schema.sql
+    │   ├── get_process_sync_info.sql
+    │   ├── upsert_process.sql
+    │   ├── upsert_contact.sql
+    │   └── upsert_progress.sql
+    └── templates/              <- Dark-mode compatible HTML email templates
+        └── emails/
+            ├── admin_alert.html
+            └── daily_summary.html
 ```
 
 ---
 
-## ☁️ O que é necessário para conectar ao Nextcloud interno?
+## ☁️ Connecting to Internal Nextcloud
 
-O Nextcloud possui suporte nativo ao protocolo **WebDAV**. Para que a aplicação se conecte e envie os arquivos para a nuvem da sua empresa, são necessários apenas 4 parâmetros:
+Nextcloud natively supports the **WebDAV** protocol. To connect and mirror lawsuit reports to your organization's private cloud, only 4 parameters are required:
 
-1. **`NEXTCLOUD_URL`**: O endereço do seu Nextcloud interno (ex: `https://nextcloud.empresa.local` ou `http://192.168.1.100:8080`).
-2. **`NEXTCLOUD_USER`**: O nome de usuário do Nextcloud da conta de serviço ou do responsável.
-3. **`NEXTCLOUD_PASSWORD`**: Recomenda-se gerar uma **Senha de Aplicativo (App Password)**:
-   - No Nextcloud, clique na foto do seu perfil -> **Configurações Pessoais**;
-   - No menu lateral esquerdo, clique em **Segurança**;
-   - Role até a seção **Dispositivos e Sessões**;
-   - Digite um nome (ex: `LegalOne_Sync`) e clique em **Criar nova senha de app**;
-   - Copie a senha gerada e cole no `NEXTCLOUD_PASSWORD`. *(Isso evita expirar caso você troque sua senha pessoal ou tenha 2FA ativo)*.
+1. **`NEXTCLOUD_URL`**: Your internal Nextcloud base URL (e.g., `https://nextcloud.company.local` or `http://192.168.1.100:8080`).
+2. **`NEXTCLOUD_USER`**: Nextcloud username for the service account.
+3. **`NEXTCLOUD_PASSWORD`**: We strongly recommend generating an **App Password**:
+   - In Nextcloud, click your profile icon -> **Personal Settings**;
+   - On the left navigation menu, click **Security**;
+   - Scroll down to the **Devices & Sessions** section;
+   - Enter an app name (e.g., `LegalOne_Sync`) and click **Create new app password**;
+   - Copy the generated password and set it in `NEXTCLOUD_PASSWORD`. *(This prevents expiration if personal passwords change or when 2FA is active)*.
 4. **`NEXTCLOUD_VERIFY_SSL`**:
-   - Caso seu Nextcloud interno utilize certificado autoassinado ou autoridade interna (CA interna), defina como `false` para evitar rejeição por SSL.
+   - Set to `false` if your internal Nextcloud uses a self-signed certificate or custom internal CA.
 
 ---
 
-## 📧 Validações Obrigatórias de Bootstrap (SMTP & Nextcloud)
+## 📧 Mandatory Bootstrap Checks (SMTP & Nextcloud)
 
-Na inicialização da aplicação, o sistema **obrigatoriamente valida a conexão com o SMTP e com o Nextcloud ANTES de qualquer requisição ao LegalOne**:
-1. **Teste de SMTP**: Se o servidor de e-mail não responder ou a autenticação falhar, a aplicação aborta imediatamente para não rodar sem capacidade de alertas.
-2. **Teste de Nextcloud WebDAV**: Se a URL ou as credenciais do Nextcloud falharem, um e-mail de alerta crítico é enviado imediatamente ao `ADMIN_EMAIL` e a aplicação aborta antes de consultar a API ou fazer qualquer raspagem.
+At application startup, the service **validates connectivity to both SMTP and Nextcloud BEFORE querying LegalOne**:
+1. **SMTP Test**: If the mail server does not respond or authentication fails, the application aborts immediately to prevent running without alerting capability.
+2. **Nextcloud WebDAV Test**: If Nextcloud is unreachable or credentials fail, a critical alert email is dispatched immediately to `ADMIN_EMAIL` and the application aborts before contacting LegalOne.
 
 ---
 
-## 🛠️ Configuração Passo a Passo
+## 🛠️ Step-by-Step Setup
 
-### 1. Crie o arquivo `.env`
-Copie o exemplo e preencha com suas credenciais reais:
+### 1. Create the `.env` configuration file
+Copy the template and fill in your credentials:
 ```bash
 cp .env.example .env
 nano .env
 ```
 
-### 2. Valide as conexões individualmente
-Você pode testar cada serviço isoladamente via terminal:
+### 2. Validate connections individually
+You can test each remote integration directly from the CLI:
 ```bash
-# Valida o SMTP
+# Validate SMTP connection
 ./.venv/bin/legalone-sync --test-smtp
 
-# Valida o Nextcloud
+# Validate Nextcloud WebDAV connection
 ./.venv/bin/legalone-sync --test-nextcloud
 ```
 
 ---
 
-## 🐳 Execução em Produção via Docker & Cron
+## 🐳 Production Deployment via Docker & Cron
 
-A aplicação foi projetada para o padrão **run-and-exit** (executa a rotina diária e finaliza o contêiner), ideal para ser disparado pelo cron do Linux.
+The application is designed following the **run-and-exit** pattern (executes daily synchronization and terminates the container), ideal for Linux crontab scheduling.
 
-### Construir a imagem Docker
+### Build Docker image
 ```bash
 docker compose build
 ```
 
-### Executar manualmente para teste
+### Run manual test execution
 ```bash
 docker compose run --rm legalone-sync
 ```
 
-### Agendar no Cron do Linux (Todo dia às 07:00 AM)
-Edite a crontab do servidor:
+### Schedule in Linux Cron (Daily at 07:00 AM)
+Edit server crontab:
 ```bash
 crontab -e
 ```
-Adicione a seguinte linha:
+Add the following line:
 ```cron
-0 7 * * * cd /caminho/completo/Conecta_LegalOne_Sync && docker compose run --rm legalone-sync >> /var/log/legalone_sync.log 2>&1
+0 7 * * * cd /path/to/Conecta_LegalOne_Sync && docker compose run --rm legalone-sync >> /var/log/legalone_sync.log 2>&1
 ```
 
 ---
 
-## 🛡️ Resiliência e Espelhamento
+## 🛡️ Resilience, Storage & Mirroring
 
-1. **Cópia Local de Segurança**:
-   - Todos os relatórios gerados em DOCX e PDF ficam salvos permanentemente na pasta `./storage/Processos/` no host.
-2. **Auto-recriação no Nextcloud**:
-   - Caso algum usuário acidentalmente delete a pasta ou arquivo no Nextcloud, no dia seguinte o sincronizador detecta a ausência remota e reenvia automaticamente a cópia local.
-3. **Notificação de Incidentes**:
-   - Falha de senha/login no LegalOne -> Alerta imediato no e-mail do `ADMIN_EMAIL`.
-   - Falha de conexão/permissão no Nextcloud -> Alerta imediato no e-mail do `ADMIN_EMAIL`.
-   - Sucesso diário -> Relatório executivo por e-mail com KPIs e lista dos últimos andamentos para os e-mails em `NOTIFICATION_EMAILS`.
+1. **Local Safe Backup**:
+   - All generated DOCX and PDF reports are permanently saved in `./storage/Processos/<Party_Name>/` on the host, grouped by party.
+2. **Auto-healing Mirror on Nextcloud**:
+   - If a user inadvertently deletes a remote folder or file in Nextcloud, the next daily execution detects the remote absence and automatically restores the file from the local disk copy.
+3. **Public Magic Links**:
+   - Automatically generates read-only public shares for the rotating daily folder (`Novos_e_Atualizados`) and permanent archive (`Arquivo_Geral`), included directly in the daily summary email.
+4. **Incident Notifications**:
+   - LegalOne authentication/login failure -> Immediate alert email to `ADMIN_EMAIL`.
+   - Nextcloud connectivity/permission error -> Immediate alert email to `ADMIN_EMAIL`.
+   - Successful daily execution -> Executive summary email with KPIs, court identifiers, and recent progress to `NOTIFICATION_EMAILS`.
+
+---
+
+## 🧪 Testing & Code Quality
+
+The project features a comprehensive unit test suite with 92% statement coverage and strict Ruff linting:
+
+```bash
+# Run all unit tests with coverage report
+./.venv/bin/pytest
+
+# Check code linting with Ruff
+./.venv/bin/ruff check source/ tests/
+
+# Test report generation locally
+./.venv/bin/python scripts/test_document_generation.py
+
+# Preview email templates in browser
+./.venv/bin/python scripts/test_email_templates.py
+```
