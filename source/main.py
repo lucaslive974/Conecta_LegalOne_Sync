@@ -7,9 +7,9 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from source.config import AppConfig, config
-from source.nextcloud_client import NextcloudClient
-from source.notifier import send_admin_alert, test_smtp_connection
-from source.sync_service import SyncService
+from source.infrastructure.email.notifier import send_admin_alert, test_smtp_connection
+from source.infrastructure.nextcloud.client import NextcloudClient
+from source.services.sync_service import SyncService
 
 
 def setup_logging():

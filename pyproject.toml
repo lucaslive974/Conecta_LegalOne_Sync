@@ -33,7 +33,12 @@ where = ["."]
 include = ["source*"]
 
 [tool.setuptools.package-data]
-source = ["sql/*.sql", "templates/emails/*.html"]
+source = [
+    "sql/*.sql",
+    "templates/emails/*.html",
+    "infrastructure/database/sql/*.sql",
+    "infrastructure/email/templates/emails/*.html",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
