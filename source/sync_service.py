@@ -10,8 +10,10 @@ from source.cnj_parser import parse_cnj
 from source.config import AppConfig
 from source.database import Database
 from source.document_generator import DocumentGenerator, sanitize_filename
+from source.http_client import HTTPClient
 from source.nextcloud_client import NextcloudClient
 from source.notifier import send_admin_alert, send_daily_summary
+from source.smtp_client import SMTPClient
 
 logger = logging.getLogger(__name__)
 
@@ -44,10 +46,23 @@ def extract_party_names(proc: dict[str, Any]) -> list[str]:
 class SyncService:
     """Orchestrator for synchronization lifecycle, report generation, and mirroring."""
 
-    def __init__(self, config: AppConfig):
+    def __init__(
+        self,
+        config: AppConfig,
+        db: Database | None = None,
+        doc_generator: DocumentGenerator | None = None,
+        legalone_client: LegalOneClient | None = None,
+        nextcloud_client: NextcloudClient | None = None,
+        smtp_client: SMTPClient | None = None,
+        http_client: HTTPClient | None = None,
+    ):
         self.config = config
-        self.db = Database(config.db_path)
-        self.doc_generator = DocumentGenerator(config.temp_dir)
+        self.db = db or Database(config.db_path)
+        self.doc_generator = doc_generator or DocumentGenerator(config.temp_dir)
+        self.legalone_client = legalone_client
+        self.nextcloud_client = nextcloud_client
+        self.smtp_client = smtp_client
+        self.http_client = http_client
         self.local_storage_dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storage", "Processos"
         )
@@ -70,38 +85,50 @@ class SyncService:
         logger.info("Data/Hora: %s", datetime.now().strftime("%d/%m/%Y %H:%M:%S"))
         logger.info("==================================================")
 
-        # 1. LegalOne login
-        try:
-            logger.info("Autenticando no Conecta LegalOne com e-mail: %s...", self.config.legalone_email)
-            auth_data = login_legalone(
-                email=self.config.legalone_email,
-                password=self.config.legalone_password,
-                access_code=self.config.legalone_access_code,
-                base_url=self.config.legalone_base_url
-            )
-            token = auth_data.get("token") or auth_data.get("accessToken") or auth_data.get("access_token")
-            if not token:
-                raise ValueError("Nenhum token retornado pela API do LegalOne.")
-        except Exception as e:
-            err_msg = f"Falha ao realizar login no LegalOne:\n{str(e)}"
-            logger.error(err_msg)
+        # 1. LegalOne client initialization
+        if self.legalone_client is not None:
+            client = self.legalone_client
+        else:
             try:
-                send_admin_alert(
-                    config=self.config,
-                    subject_title="Falha de Autenticação LegalOne",
-                    error_message=str(e),
-                    context_details="O processo não pôde iniciar porque as credenciais foram rejeitadas ou o serviço está inacessível."
+                logger.info("Autenticando no Conecta LegalOne com e-mail: %s...", self.config.legalone_email)
+                auth_data = login_legalone(
+                    email=self.config.legalone_email,
+                    password=self.config.legalone_password,
+                    access_code=self.config.legalone_access_code,
+                    base_url=self.config.legalone_base_url,
+                    http_client=self.http_client,
                 )
-            except Exception as mail_err:
-                logger.error("Falha secundária ao enviar e-mail de alerta: %s", mail_err)
-            raise
+                token = auth_data.get("token") or auth_data.get("accessToken") or auth_data.get("access_token")
+                if not token:
+                    raise ValueError("Nenhum token retornado pela API do LegalOne.")
+                client = LegalOneClient(
+                    token=token,
+                    tenant_id=self.config.legalone_tenant_id,
+                    base_url=self.config.legalone_base_url,
+                    http_client=self.http_client,
+                )
+            except Exception as e:
+                err_msg = f"Falha ao realizar login no LegalOne:\n{str(e)}"
+                logger.error(err_msg)
+                try:
+                    send_admin_alert(
+                        config=self.config,
+                        subject_title="Falha de Autenticação LegalOne",
+                        error_message=str(e),
+                        context_details="O processo não pôde iniciar porque as credenciais foram rejeitadas ou o serviço está inacessível.",
+                        smtp_client=self.smtp_client,
+                    )
+                except Exception as mail_err:
+                    logger.error("Falha secundária ao enviar e-mail de alerta: %s", mail_err)
+                raise
 
         # 2. Nextcloud initialization
-        nc_client = NextcloudClient(
+        nc_client = self.nextcloud_client or NextcloudClient(
             base_url=self.config.nextcloud_url,
             user=self.config.nextcloud_user,
             password=self.config.nextcloud_password,
-            verify_ssl=self.config.nextcloud_verify_ssl
+            verify_ssl=self.config.nextcloud_verify_ssl,
+            http_client=self.http_client,
         )
 
         daily_folder = f"{self.config.nextcloud_remote_dir}/Novos_e_Atualizados"
@@ -127,13 +154,6 @@ class SyncService:
             logger.info("Magic Link (Acervo Geral): %s", magic_link_archive)
         except Exception as link_err:
             logger.warning("Não foi possível gerar Magic Links públicos: %s", link_err)
-
-        # 5. Initialize LegalOne client
-        client = LegalOneClient(
-            token=token,
-            tenant_id=self.config.legalone_tenant_id,
-            base_url=self.config.legalone_base_url
-        )
 
         page = 1
         limit = self.config.page_limit
@@ -313,7 +333,8 @@ class SyncService:
                 updated_items=updated_processes_summary,
                 nextcloud_folder=self.config.nextcloud_remote_dir,
                 magic_link_daily=magic_link_daily,
-                magic_link_archive=magic_link_archive
+                magic_link_archive=magic_link_archive,
+                smtp_client=self.smtp_client,
             )
         except Exception as mail_err:
             logger.error("Erro ao enviar e-mail diário de resumo: %s", mail_err)

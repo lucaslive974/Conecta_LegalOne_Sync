@@ -3,7 +3,7 @@ import json
 import logging
 from typing import Any
 
-import requests
+from source.http_client import HTTPClient, RequestsHTTPClient
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,13 @@ def extract_tenant_id_from_jwt(token: str) -> str | None:
     return None
 
 
-def login_legalone(email: str, password: str, access_code: str, base_url: str | None = None) -> dict[str, Any]:
+def login_legalone(
+    email: str,
+    password: str,
+    access_code: str,
+    base_url: str | None = None,
+    http_client: HTTPClient | None = None,
+) -> dict[str, Any]:
     """
     Authenticate against the Conecta LegalOne API.
 
@@ -47,16 +53,20 @@ def login_legalone(email: str, password: str, access_code: str, base_url: str | 
         "Authorization": f"Basic {basic_token}",
         "Content-Type": "application/json",
         "Accept": "application/json, text/plain, */*",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
+        ),
     }
 
     payload = {
         "accessCode": access_code.strip()
     }
 
+    client = http_client or RequestsHTTPClient()
     try:
-        res = requests.post(login_url, headers=headers, json=payload, timeout=25)
-    except requests.RequestException as exc:
+        res = client.post(login_url, headers=headers, json=payload, timeout=25)
+    except Exception as exc:
         logger.error("Erro de conexão ao tentar autenticar no LegalOne: %s", exc)
         raise ConnectionError(f"Falha de rede ao acessar LegalOne: {exc}") from exc
 

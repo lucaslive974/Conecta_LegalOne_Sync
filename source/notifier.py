@@ -1,14 +1,12 @@
 import logging
 import os
-import smtplib
 from datetime import datetime
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from typing import Any
 
 import jinja2
 
 from source.config import AppConfig
+from source.smtp_client import SMTPClient, StandardSMTPClient
 
 logger = logging.getLogger(__name__)
 
@@ -19,78 +17,35 @@ jinja_env = jinja2.Environment(
 )
 
 
-def test_smtp_connection(config: AppConfig) -> bool:
+def test_smtp_connection(config: AppConfig, smtp_client: SMTPClient | None = None) -> bool:
     """
     Test connectivity and authentication with SMTP server at bootstrap.
     Fails and raises an exception if unable to connect or authenticate.
     """
-    if not config.smtp_host:
-        raise ValueError("SMTP_HOST não foi configurado.")
-
-    logger.info("Testando conexão SMTP com %s:%s...", config.smtp_host, config.smtp_port)
-    try:
-        if config.smtp_use_ssl:
-            server = smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, timeout=15)
-        else:
-            server = smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=15)
-
-        server.ehlo()
-        if config.smtp_use_tls and not config.smtp_use_ssl:
-            server.starttls()
-            server.ehlo()
-
-        if config.smtp_user and config.smtp_password:
-            server.login(config.smtp_user, config.smtp_password)
-
-        server.quit()
-        logger.info("✓ Teste de SMTP concluído com sucesso!")
-        return True
-    except Exception as e:
-        logger.critical("✕ FALHA NO TESTE DE SMTP: Não foi possível conectar ao servidor de e-mail: %s", e)
-        raise ConnectionError(f"Falha de conexão SMTP no bootstrap: {e}") from e
+    client = smtp_client or StandardSMTPClient(config)
+    return client.test_connection()
 
 
-def send_email(config: AppConfig, to_addresses: list[str], subject: str, html_content: str, text_content: str | None = None):
+def send_email(
+    config: AppConfig,
+    to_addresses: list[str],
+    subject: str,
+    html_content: str,
+    text_content: str | None = None,
+    smtp_client: SMTPClient | None = None,
+) -> None:
     """Send an HTML/text email via SMTP to the provided recipient list."""
-    if not to_addresses:
-        logger.warning("Nenhum destinatário informado para envio de e-mail.")
-        return
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = config.smtp_from
-    msg["To"] = ", ".join(to_addresses)
-
-    plain_text = text_content or "Este e-mail contém formatação HTML. Por favor, visualize em um cliente de e-mail compatível."
-    part1 = MIMEText(plain_text, "plain", "utf-8")
-    part2 = MIMEText(html_content, "html", "utf-8")
-
-    msg.attach(part1)
-    msg.attach(part2)
-
-    try:
-        if config.smtp_use_ssl:
-            server = smtplib.SMTP_SSL(config.smtp_host, config.smtp_port, timeout=20)
-        else:
-            server = smtplib.SMTP(config.smtp_host, config.smtp_port, timeout=20)
-
-        server.ehlo()
-        if config.smtp_use_tls and not config.smtp_use_ssl:
-            server.starttls()
-            server.ehlo()
-
-        if config.smtp_user and config.smtp_password:
-            server.login(config.smtp_user, config.smtp_password)
-
-        server.sendmail(config.smtp_from, to_addresses, msg.as_string())
-        server.quit()
-        logger.info("E-mail enviado com sucesso para: %s (Assunto: '%s')", to_addresses, subject)
-    except Exception as e:
-        logger.error("Erro ao enviar e-mail via SMTP: %s", e)
-        raise
+    client = smtp_client or StandardSMTPClient(config)
+    client.send_email(to_addresses, subject, html_content, text_content)
 
 
-def send_admin_alert(config: AppConfig, subject_title: str, error_message: str, context_details: str = ""):
+def send_admin_alert(
+    config: AppConfig,
+    subject_title: str,
+    error_message: str,
+    context_details: str = "",
+    smtp_client: SMTPClient | None = None,
+) -> None:
     """
     Render admin_alert.html template and send critical alert to the administrator.
     """
@@ -109,7 +64,7 @@ def send_admin_alert(config: AppConfig, subject_title: str, error_message: str, 
         context_details=context_details
     )
 
-    send_email(config, [config.admin_email], subject, html)
+    send_email(config, [config.admin_email], subject, html, smtp_client=smtp_client)
 
 
 def send_daily_summary(
@@ -118,8 +73,9 @@ def send_daily_summary(
     updated_items: list[dict[str, Any]],
     nextcloud_folder: str,
     magic_link_daily: str | None = None,
-    magic_link_archive: str | None = None
-):
+    magic_link_archive: str | None = None,
+    smtp_client: SMTPClient | None = None,
+) -> None:
     """
     Render daily_summary.html template and send executive summary to recipients
     with public Magic Links to daily updates and the complete archive.
@@ -144,4 +100,60 @@ def send_daily_summary(
 
     date_label = now_str.split(" às ")[0]
     subject = f"⚖️ Relatório Diário LegalOne - {total_synced} processos atualizados ({date_label})"
-    send_email(config, recipients, subject, html)
+    send_email(config, recipients, subject, html, smtp_client=smtp_client)
+
+
+class EmailNotifier:
+    """High-level email notification service with template rendering and injected SMTP client."""
+
+    def __init__(self, config: AppConfig, smtp_client: SMTPClient | None = None):
+        self.config = config
+        self.smtp_client = smtp_client or StandardSMTPClient(config)
+
+    def test_connection(self) -> bool:
+        """Test SMTP server connectivity and authentication."""
+        return self.smtp_client.test_connection()
+
+    def send_email(
+        self,
+        to_addresses: list[str],
+        subject: str,
+        html_content: str,
+        text_content: str | None = None,
+    ) -> None:
+        """Send an email using the injected SMTP client."""
+        self.smtp_client.send_email(to_addresses, subject, html_content, text_content)
+
+    def send_admin_alert(
+        self,
+        subject_title: str,
+        error_message: str,
+        context_details: str = "",
+    ) -> None:
+        """Render and dispatch an admin alert email."""
+        send_admin_alert(
+            self.config,
+            subject_title,
+            error_message,
+            context_details,
+            smtp_client=self.smtp_client,
+        )
+
+    def send_daily_summary(
+        self,
+        stats: dict[str, Any],
+        updated_items: list[dict[str, Any]],
+        nextcloud_folder: str,
+        magic_link_daily: str | None = None,
+        magic_link_archive: str | None = None,
+    ) -> None:
+        """Render and dispatch the daily summary email."""
+        send_daily_summary(
+            self.config,
+            stats,
+            updated_items,
+            nextcloud_folder,
+            magic_link_daily,
+            magic_link_archive,
+            smtp_client=self.smtp_client,
+        )

@@ -6,13 +6,22 @@ import xml.etree.ElementTree as ET
 import requests
 from requests.auth import HTTPBasicAuth
 
+from source.http_client import HTTPClient, RequestsHTTPClient
+
 logger = logging.getLogger(__name__)
 
 
 class NextcloudClient:
     """WebDAV and OCS Share client for Nextcloud integration."""
 
-    def __init__(self, base_url: str, user: str, password: str, verify_ssl: bool = True):
+    def __init__(
+        self,
+        base_url: str,
+        user: str,
+        password: str,
+        verify_ssl: bool = True,
+        http_client: HTTPClient | None = None,
+    ):
         self.base_url = base_url.rstrip("/")
         self.user = user
         self.password = password
@@ -24,9 +33,14 @@ class NextcloudClient:
         # Nextcloud OCS Share API endpoint for Magic Links
         self.ocs_share_url = f"{self.base_url}/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
-        self.session = requests.Session()
-        self.session.auth = self.auth
-        self.session.verify = self.verify_ssl
+        self.http_client = http_client or RequestsHTTPClient(
+            auth=self.auth, verify=self.verify_ssl
+        )
+
+    @property
+    def session(self) -> HTTPClient:
+        """Expose the HTTP client interface for WebDAV and OCS requests."""
+        return self.http_client
 
     def test_connection(self) -> bool:
         """

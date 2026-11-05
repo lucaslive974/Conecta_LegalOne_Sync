@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from source.auth import extract_tenant_id_from_jwt, login_legalone
+from source.http_client import HTTPClient, RequestsHTTPClient
 
 
 def test_extract_tenant_id_valid():
@@ -27,10 +28,24 @@ def test_login_legalone_success(mocker):
     mock_resp.content = b'{"token": "jwt_token_123"}'
     mock_resp.json.return_value = {"token": "jwt_token_123"}
 
-    mocker.patch("requests.post", return_value=mock_resp)
+    mock_client = mocker.MagicMock(spec=HTTPClient)
+    mock_client.post.return_value = mock_resp
+
+    res = login_legalone("user@test.com", "pass", "ACC123", http_client=mock_client)
+    assert res.get("token") == "jwt_token_123"
+    mock_client.post.assert_called_once()
+
+
+def test_login_legalone_default_client_fallback(mocker):
+    mock_resp = mocker.MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.content = b'{"token": "jwt_default_456"}'
+    mock_resp.json.return_value = {"token": "jwt_default_456"}
+
+    mocker.patch.object(RequestsHTTPClient, "post", return_value=mock_resp)
 
     res = login_legalone("user@test.com", "pass", "ACC123")
-    assert res.get("token") == "jwt_token_123"
+    assert res.get("token") == "jwt_default_456"
 
 
 def test_login_legalone_nested_token(mocker):
@@ -39,9 +54,10 @@ def test_login_legalone_nested_token(mocker):
     mock_resp.content = b'{"data": {"token": "nested_jwt_abc"}}'
     mock_resp.json.return_value = {"data": {"token": "nested_jwt_abc"}}
 
-    mocker.patch("requests.post", return_value=mock_resp)
+    mock_client = mocker.MagicMock(spec=HTTPClient)
+    mock_client.post.return_value = mock_resp
 
-    res = login_legalone("user@test.com", "pass", "ACC123")
+    res = login_legalone("user@test.com", "pass", "ACC123", http_client=mock_client)
     assert res.get("token") == "nested_jwt_abc"
 
 
@@ -51,18 +67,20 @@ def test_login_legalone_http_error(mocker):
     mock_resp.content = b'{"message": "Credenciais invalidas"}'
     mock_resp.json.return_value = {"message": "Credenciais invalidas"}
 
-    mocker.patch("requests.post", return_value=mock_resp)
+    mock_client = mocker.MagicMock(spec=HTTPClient)
+    mock_client.post.return_value = mock_resp
 
     with pytest.raises(ValueError) as excinfo:
-        login_legalone("user@test.com", "wrong", "ACC123")
+        login_legalone("user@test.com", "wrong", "ACC123", http_client=mock_client)
 
     assert "Credenciais invalidas" in str(excinfo.value)
 
 
 def test_login_legalone_connection_error(mocker):
-    mocker.patch("requests.post", side_effect=requests.RequestException("Network unreachable"))
+    mock_client = mocker.MagicMock(spec=HTTPClient)
+    mock_client.post.side_effect = requests.RequestException("Network unreachable")
 
     with pytest.raises(ConnectionError) as excinfo:
-        login_legalone("user@test.com", "pass", "ACC123")
+        login_legalone("user@test.com", "pass", "ACC123", http_client=mock_client)
 
     assert "Falha de rede" in str(excinfo.value)
