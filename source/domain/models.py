@@ -161,6 +161,13 @@ class Lawsuit:
         progresses_raw = data.get("recentProgresses") or data.get("progresses") or []
         andamentos = [Progress.from_dict(pr) for pr in progresses_raw]
 
+        dt_atualizacao = (
+            data.get("dtHrUltimaAtualizacaoDc")
+            or data.get("dtHrUltimaAtualizacao")
+            or data.get("dt_hr_ultima_atualizacao")
+        )
+        data_distribuicao = data.get("dtHrCadastro") or data.get("dataDistribuicao") or data.get("data_distribuicao")
+
         return cls(
             id=raw_id,
             cnj=raw_cnj,
@@ -168,9 +175,9 @@ class Lawsuit:
             pasta=data.get("pasta"),
             valor_causa=data.get("valorCausa"),
             status_nome=status_nome or "Ativo",
-            data_distribuicao=data.get("dataDistribuicao"),
+            data_distribuicao=data_distribuicao,
             data_fechamento=data.get("dataFechamento"),
-            dt_hr_ultima_atualizacao=data.get("dtHrUltimaAtualizacao") or data.get("dt_hr_ultima_atualizacao"),
+            dt_hr_ultima_atualizacao=dt_atualizacao,
             id_adv_publication=data.get("id_adv_publication"),
             partes=partes,
             andamentos=andamentos,

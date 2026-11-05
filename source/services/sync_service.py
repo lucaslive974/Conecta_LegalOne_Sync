@@ -219,6 +219,7 @@ class SyncService:
         safe_cnj: str,
         archive_folder: str | None = None,
         nc_client: NextcloudClient | None = None,
+        parties: list[str] | None = None,
     ) -> bool:
         """
         Verify if lawsuit is unchanged in SQLite database and has an intact
@@ -244,12 +245,13 @@ class SyncService:
         if is_changed:
             return False
 
-        # Verify local disk PDF integrity (zero network requests)
-        local_proc_folder = os.path.join(self.local_storage_dir, first_party)
-        local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
-
-        if os.path.exists(local_pdf):
-            return True
+        # Verify local disk PDF integrity across any party directories
+        candidate_parties = parties or [first_party]
+        for p in candidate_parties:
+            local_proc_folder = os.path.join(self.local_storage_dir, sanitize_filename(p))
+            local_pdf = os.path.join(local_proc_folder, f"{safe_cnj}_Relatorio.pdf")
+            if os.path.exists(local_pdf):
+                return True
 
         logger.info("Processo sem alteração na API mas com PDF ausente em disco local. Recriando: %s", cnj)
         return False
@@ -429,7 +431,7 @@ class SyncService:
 
         first_party = sanitize_filename(parties[0])
 
-        if self._is_process_up_to_date(item, first_party, safe_cnj):
+        if self._is_process_up_to_date(item, first_party, safe_cnj, parties=parties):
             return False, None
 
         proc_full = self._fetch_process_details(client, item)
