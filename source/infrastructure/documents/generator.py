@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Any
 
 import docx
+from docx.document import Document as DocxDocument
 from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import parse_xml
@@ -79,7 +80,7 @@ class DocumentGenerator:
         os.makedirs(temp_dir, exist_ok=True)
 
     @staticmethod
-    def _setup_document_margins(doc: docx.Document, margin_inches: float = 0.8) -> None:
+    def _setup_document_margins(doc: DocxDocument, margin_inches: float = 0.8) -> None:
         """Configure page margins across document sections."""
         for section in doc.sections:
             section.top_margin = Inches(margin_inches)
@@ -88,7 +89,7 @@ class DocumentGenerator:
             section.right_margin = Inches(margin_inches)
 
     @staticmethod
-    def _add_document_header(doc: docx.Document, pasta: str, cnj: str, cnj_info: Any) -> None:
+    def _add_document_header(doc: DocxDocument, pasta: str, cnj: str, cnj_info: Any) -> None:
         """Add Apple-style minimalist header eyebrow, title, subtitle, and divider."""
         p_header = doc.add_paragraph()
         p_header.paragraph_format.space_before = Pt(0)
@@ -140,7 +141,7 @@ class DocumentGenerator:
 
     @staticmethod
     def _add_general_data_section(
-        doc: docx.Document,
+        doc: DocxDocument,
         proc: Any,
         cnj: str,
         cnj_info: Any,
@@ -156,18 +157,20 @@ class DocumentGenerator:
             r.font.color.rgb = COLOR_BLACK
 
         if isinstance(proc, Lawsuit):
-            p_id = proc.id
+            p_id_str = str(proc.id)
             pasta = proc.pasta or "N/A"
             valor = proc.valor_causa
             status_nome = proc.status_nome
             dt_atualizacao = proc.dt_hr_ultima_atualizacao or "N/A"
         else:
-            p_id = proc.get("id") or "N/A"
+            p_id_str = str(proc.get("id") or "N/A")
             pasta = proc.get("pasta") or "N/A"
             valor = proc.get("valorCausa")
             status_info = proc.get("status") or {}
             status_nome = (
-                status_info.get("nome") if isinstance(status_info, dict) else str(status_info or "Não informado")
+                str(status_info.get("nome") or "Não informado")
+                if isinstance(status_info, dict)
+                else str(status_info or "Não informado")
             )
             dt_atualizacao = proc.get("dtHrUltimaAtualizacaoDc") or proc.get("dtHrUltimaAtualizacao") or "N/A"
 
@@ -191,7 +194,7 @@ class DocumentGenerator:
         tribunal_display = f"{sigla} - {nome_trib}" if is_valid else nome_trib
 
         meta_fields = [
-            ("Número CNJ", cnj, "ID Conecta", str(p_id)),
+            ("Número CNJ", cnj, "ID Conecta", p_id_str),
             ("Tribunal Competente", tribunal_display, "Esfera / Ramo", ramo),
             ("Ano de Distribuição", ano, "Status", status_nome),
             ("Valor da Causa", valor_str, "Pasta", pasta),
@@ -256,7 +259,7 @@ class DocumentGenerator:
             run.font.color.rgb = COLOR_BLACK
 
     @staticmethod
-    def _add_parties_section(doc: docx.Document, contatos: list[Any]) -> None:
+    def _add_parties_section(doc: DocxDocument, contatos: list[Any]) -> None:
         """Add '2. Polos Processuais e Partes' section with parties table."""
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
         h2 = doc.add_heading("2. Polos Processuais e Partes", level=2)
@@ -341,7 +344,7 @@ class DocumentGenerator:
             r2.font.color.rgb = COLOR_MUTED
 
     @staticmethod
-    def _add_progress_section(doc: docx.Document, andamentos: list[Any]) -> None:
+    def _add_progress_section(doc: DocxDocument, andamentos: list[Any]) -> None:
         """Add '3. Andamentos e Publicações' timeline and blockquote entries."""
         doc.add_paragraph().paragraph_format.space_after = Pt(4)
         h3 = doc.add_heading(f"3. Andamentos e Publicações ({len(andamentos)})", level=2)
@@ -416,7 +419,7 @@ class DocumentGenerator:
             run_txt.font.color.rgb = COLOR_DARK
 
     @staticmethod
-    def _add_document_footer(doc: docx.Document) -> None:
+    def _add_document_footer(doc: DocxDocument) -> None:
         """Add confidentiality notice and timestamp to section footer."""
         footer = doc.sections[0].footer
         p_ft = footer.paragraphs[0]

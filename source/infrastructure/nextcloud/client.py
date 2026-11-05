@@ -32,7 +32,7 @@ class NextcloudClient:
         # Nextcloud OCS Share API endpoint for Magic Links
         self.ocs_share_url = f"{self.base_url}/ocs/v2.php/apps/files_sharing/api/v1/shares"
 
-        self.http_client = http_client or RequestsHTTPClient(auth=self.auth, verify=self.verify_ssl)
+        self.http_client: HTTPClient = http_client or RequestsHTTPClient(auth=self.auth, verify=self.verify_ssl)
 
     @property
     def session(self) -> HTTPClient:

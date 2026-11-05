@@ -107,13 +107,13 @@ class Database:
                     )
         else:
             proc_data = proc
-            p_id = proc_data.get("id")
-            adv_pub = pub_id or proc_data.get("id_adv_publication")
-            cnj = proc_data.get("numeroCNJ")
-            pasta = proc_data.get("pasta")
-            valor = proc_data.get("valorCausa")
+            p_id_val = proc_data.get("id")
+            adv_pub_val = pub_id or proc_data.get("id_adv_publication")
+            cnj_val = proc_data.get("numeroCNJ")
+            pasta_val = proc_data.get("pasta")
+            valor_val = proc_data.get("valorCausa")
             status_info = proc_data.get("status") or {}
-            status_nome = status_info.get("nome") if isinstance(status_info, dict) else str(status_info)
+            status_val = status_info.get("nome") if isinstance(status_info, dict) else str(status_info)
             dt_atualizacao = proc_data.get("dtHrUltimaAtualizacaoDc") or proc_data.get("dtHrUltimaAtualizacao")
             dt_cadastro = proc_data.get("dtHrCadastro")
             recent_act = proc_data.get("recentActivityDate")
@@ -123,12 +123,12 @@ class Database:
                 self.conn.execute(
                     SQL_UPSERT_PROCESS,
                     (
-                        p_id,
-                        adv_pub,
-                        cnj,
-                        pasta,
-                        valor,
-                        status_nome,
+                        p_id_val,
+                        adv_pub_val,
+                        cnj_val,
+                        pasta_val,
+                        valor_val,
+                        status_val,
                         dt_atualizacao,
                         dt_cadastro,
                         recent_act,
@@ -146,7 +146,7 @@ class Database:
                         SQL_UPSERT_CONTACT,
                         (
                             cid,
-                            p_id,
+                            p_id_val,
                             agn.get("nome"),
                             agn.get("cpfCnpj"),
                             pos.get("descricao"),
@@ -161,7 +161,7 @@ class Database:
                         SQL_UPSERT_PROGRESS,
                         (
                             aid,
-                            p_id,
+                            p_id_val,
                             andam.get("dtHrAndamento"),
                             andam.get("strData"),
                             andam.get("strHora"),

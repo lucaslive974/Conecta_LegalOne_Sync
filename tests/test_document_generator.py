@@ -27,7 +27,8 @@ def test_document_sections_modular(tmp_path):
 
     # 1. Setup margins
     generator._setup_document_margins(doc, margin_inches=0.8)
-    assert doc.sections[0].top_margin.inches == 0.8
+    top_margin = doc.sections[0].top_margin
+    assert top_margin is not None and top_margin.inches == 0.8
 
     # 2. Header
     cnj_info = parse_cnj("5003140-58.2023.8.13.0439")

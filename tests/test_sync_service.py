@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import pytest
 
@@ -41,7 +42,7 @@ def test_extract_party_names():
 
 
 def test_extract_party_names_fallback():
-    proc = {"contatos": []}
+    proc: dict[str, Any] = {"contatos": []}
     assert extract_party_names(proc) == ["Partes_Nao_Identificadas"]
 
 
@@ -180,7 +181,7 @@ def test_init_legalone_client_failure(mock_config, tmp_path, mocker):
     mock_smtp = mocker.MagicMock()
     service = SyncService(config=mock_config, smtp_client=mock_smtp)
 
-    mocker.patch("source.sync_service.login_legalone", side_effect=Exception("Auth rejected"))
+    mocker.patch("source.services.sync_service.login_legalone", side_effect=Exception("Auth rejected"))
 
     with pytest.raises(Exception) as excinfo:
         service._init_legalone_client()

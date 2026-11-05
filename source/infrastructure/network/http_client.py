@@ -10,11 +10,22 @@ logger = logging.getLogger(__name__)
 class HTTPResponse(Protocol):
     """Protocol for HTTP response objects."""
 
-    status_code: int
-    content: bytes
-    text: str
+    @property
+    def status_code(self) -> int:
+        """HTTP status code."""
+        ...
 
-    def json(self) -> Any:
+    @property
+    def content(self) -> bytes:
+        """Raw response body bytes."""
+        ...
+
+    @property
+    def text(self) -> str:
+        """Decoded response body as text."""
+        ...
+
+    def json(self, **kwargs: Any) -> Any:
         """Parse response body as JSON."""
         ...
 
@@ -27,7 +38,7 @@ class HTTPResponse(Protocol):
 class HTTPClient(Protocol):
     """Protocol defining the interface for HTTP clients."""
 
-    headers: dict[str, str]
+    headers: Any
 
     def request(
         self,
@@ -87,12 +98,12 @@ class RequestsHTTPClient:
         return self._session
 
     @property
-    def headers(self) -> dict[str, str]:
+    def headers(self) -> Any:
         """HTTP headers applied to subsequent requests."""
         return self._session.headers
 
     @headers.setter
-    def headers(self, value: dict[str, str]) -> None:
+    def headers(self, value: Any) -> None:
         self._session.headers = value
 
     @property
@@ -105,12 +116,12 @@ class RequestsHTTPClient:
         self._session.auth = value
 
     @property
-    def verify(self) -> bool | str:
+    def verify(self) -> bool | str | None:
         """SSL verification setting."""
         return self._session.verify
 
     @verify.setter
-    def verify(self, value: bool | str) -> None:
+    def verify(self, value: bool | str | None) -> None:
         self._session.verify = value
 
     def request(

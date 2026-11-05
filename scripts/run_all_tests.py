@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def run_subtest(title: str, script_name: str, args: list = None) -> bool:
+def run_subtest(title: str, script_name: str, args: list[str] | None = None) -> bool:
     print(f"\n▶ Executando: {title}...")
     cmd = [sys.executable, os.path.join(SCRIPTS_DIR, script_name)] + (args or [])
     res = subprocess.run(cmd)

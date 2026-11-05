@@ -69,7 +69,8 @@ def login_legalone(
         raise ConnectionError(f"Falha de rede ao acessar LegalOne: {exc}") from exc
 
     try:
-        data = res.json() if res.content else {}
+        parsed = res.json() if res.content else {}
+        data = parsed if isinstance(parsed, dict) else {}
     except Exception:
         data = {}
 
@@ -79,7 +80,8 @@ def login_legalone(
         raise ValueError(error_msg)
 
     # Extract token from root or nested 'data' object
-    token = data.get("token") or (data.get("data") if isinstance(data.get("data"), dict) else {}).get("token")
+    data_nested = data.get("data")
+    token = data.get("token") or (data_nested.get("token") if isinstance(data_nested, dict) else None)
     if not token and isinstance(data, dict):
         for k in ("token", "jwt", "accessToken", "access_token"):
             if k in data:

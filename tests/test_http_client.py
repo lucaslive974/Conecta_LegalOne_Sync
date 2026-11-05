@@ -14,7 +14,7 @@ class FakeResponse:
         self.text = text
         self.content = content
 
-    def json(self) -> Any:
+    def json(self, **kwargs: Any) -> Any:
         return self._json_data
 
     def raise_for_status(self) -> None:

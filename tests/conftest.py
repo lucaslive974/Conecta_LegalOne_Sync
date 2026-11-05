@@ -25,6 +25,8 @@ def mock_config(tmp_path):
         smtp_port=587,
         smtp_user="noreply@empresa.com.br",
         smtp_password="smtp_password_xyz",
+        smtp_use_ssl=False,
+        smtp_use_tls=True,
         admin_email="admin@empresa.com.br",
         notification_emails=["juridico@empresa.com.br", "diretoria@empresa.com.br"],
         db_path=str(db_file),

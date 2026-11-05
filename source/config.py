@@ -29,6 +29,15 @@ def _parse_email_list(val: str | None) -> list[str]:
     return [e.strip() for e in val.replace(";", ",").split(",") if e.strip()]
 
 
+def _parse_int_optional(val: str | None) -> int | None:
+    if not val:
+        return None
+    try:
+        return int(val.strip())
+    except ValueError:
+        return None
+
+
 def _get_default_base_dir() -> str:
     """Determine reliable base directory for data, storage, and temp folders."""
     # Running inside Docker container with /app mount points
@@ -91,9 +100,7 @@ class AppConfig:
     timezone: str = field(default_factory=lambda: os.getenv("TIMEZONE", "America/Sao_Paulo"))
     run_on_startup: bool = field(default_factory=lambda: _str_to_bool(os.getenv("RUN_ON_STARTUP"), default=False))
     page_limit: int = field(default_factory=lambda: int(os.getenv("PAGE_LIMIT", "18")))
-    max_pages: int | None = field(
-        default_factory=lambda: int(os.getenv("MAX_PAGES")) if os.getenv("MAX_PAGES") else None
-    )
+    max_pages: int | None = field(default_factory=lambda: _parse_int_optional(os.getenv("MAX_PAGES")))
 
     def validate_essential_configs(self):
         """Validate that essential configurations required for operation are present."""

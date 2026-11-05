@@ -83,3 +83,15 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["source"]
 
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+check_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = ["apscheduler.*", "docx.*"]
+ignore_missing_imports = true
+

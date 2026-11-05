@@ -224,13 +224,14 @@ class SyncService:
         Verify if lawsuit is unchanged in SQLite database and retains intact
         PDF copies locally and on Nextcloud (auto-healing remote copy if missing).
         """
+        p_id: int | str
         if isinstance(item, Lawsuit):
             p_id = item.id
             pub_id = item.id_adv_publication
             cnj = item.cnj
             api_updated_at = item.dt_hr_ultima_atualizacao
         else:
-            p_id = item.get("id")
+            p_id = item.get("id") or 0
             pub_id = item.get("id_adv_publication")
             cnj = item.get("numeroCNJ") or f"ID_{p_id}"
             api_updated_at = item.get("dtHrUltimaAtualizacaoDc") or item.get("dtHrUltimaAtualizacao")
@@ -357,6 +358,7 @@ class SyncService:
         Process a single lawsuit item:
         Returns (was_synced, summary_item_or_none).
         """
+        p_id: int | str
         if isinstance(item, Lawsuit):
             p_id = item.id
             pub_id = item.id_adv_publication
@@ -364,7 +366,7 @@ class SyncService:
             safe_cnj = item.safe_cnj
             parties = item.main_parties
         else:
-            p_id = item.get("id")
+            p_id = item.get("id") or 0
             pub_id = item.get("id_adv_publication")
             cnj = item.get("numeroCNJ") or f"ID_{p_id}"
             safe_cnj = sanitize_filename(cnj)

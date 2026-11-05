@@ -1,5 +1,6 @@
 import logging
 import os
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
@@ -67,7 +68,7 @@ def send_admin_alert(
 def send_daily_summary(
     config: AppConfig,
     stats: SyncStats | dict[str, Any],
-    updated_items: list[ProcessSummaryEntry | dict[str, Any]],
+    updated_items: Sequence[ProcessSummaryEntry | dict[str, Any]],
     nextcloud_folder: str,
     magic_link_daily: str | None = None,
     magic_link_archive: str | None = None,
@@ -151,7 +152,7 @@ class EmailNotifier:
     def send_daily_summary(
         self,
         stats: SyncStats | dict[str, Any],
-        updated_items: list[ProcessSummaryEntry | dict[str, Any]],
+        updated_items: Sequence[ProcessSummaryEntry | dict[str, Any]],
         nextcloud_folder: str,
         magic_link_daily: str | None = None,
         magic_link_archive: str | None = None,

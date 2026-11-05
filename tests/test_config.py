@@ -41,7 +41,7 @@ def test_validate_essential_configs_success(mock_config):
 
 
 def test_validate_essential_configs_missing_fields():
-    config = AppConfig()
+    config = AppConfig(legalone_email="", nextcloud_url="", smtp_host="", admin_email="")
     with pytest.raises(ValueError) as excinfo:
         config.validate_essential_configs()
 

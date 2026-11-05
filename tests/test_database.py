@@ -29,7 +29,8 @@ def test_database_lifecycle(tmp_path, sample_lawsuit_data):
     db.save_process(sample_lawsuit_data, pub_id=777)
 
     updated_info = db.get_process_sync_info(sample_lawsuit_data["id"])
-    assert updated_info["dt_hr_ultima_atualizacao"] == "2026-11-05 15:30:00"
-    assert updated_info["id_adv_publication"] == 777
+    assert updated_info is not None
+    assert updated_info.dt_hr_ultima_atualizacao == "2026-11-05 15:30:00"
+    assert updated_info.id_adv_publication == 777
 
     db.close()

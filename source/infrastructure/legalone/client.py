@@ -34,7 +34,7 @@ class LegalOneClient:
             ),
         }
 
-        self.http_client = http_client or RequestsHTTPClient()
+        self.http_client: HTTPClient = http_client or RequestsHTTPClient()
         if hasattr(self.http_client, "headers"):
             self.http_client.headers.update(default_headers)
 

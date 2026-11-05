@@ -35,7 +35,7 @@ def test_send_email_no_recipients(mock_config, mocker):
 
 
 def test_send_admin_alert(mock_config, mocker):
-    mock_send = mocker.patch("source.notifier.send_email")
+    mock_send = mocker.patch("source.infrastructure.email.notifier.send_email")
 
     send_admin_alert(
         config=mock_config,
@@ -53,7 +53,7 @@ def test_send_admin_alert(mock_config, mocker):
 
 
 def test_send_daily_summary(mock_config, mocker):
-    mock_send = mocker.patch("source.notifier.send_email")
+    mock_send = mocker.patch("source.infrastructure.email.notifier.send_email")
 
     stats = {"synced": 2, "skipped": 10, "total": 12}
     items = [{"cnj": "0001234", "partes": "Autor vs Reu", "ultimo_andamento": "Publicacao teste"}]
