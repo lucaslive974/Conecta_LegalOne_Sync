@@ -278,7 +278,7 @@ class SyncService:
             return False
 
         try:
-            # 1. Save local backup and upload to Nextcloud Archive (grouped by Party)
+            # Save local backup and upload to Nextcloud Archive & Daily Folder (both grouped by Party)
             for party in parties:
                 safe_party = sanitize_filename(party)
                 local_folder = os.path.join(self.local_storage_dir, safe_party)
@@ -290,20 +290,19 @@ class SyncService:
                 local_pdf = os.path.join(local_folder, f"{safe_cnj}_Relatorio.pdf")
                 shutil.copy2(pdf_tmp, local_pdf)
 
+                # 1. Upload to Permanent Archive (grouped by Party)
                 try:
                     remote_archive_pdf = f"{archive_folder}/{safe_party}/{safe_cnj}_Relatorio.pdf"
                     nc_client.upload_file(local_pdf, remote_archive_pdf)
                 except Exception as upload_err:
                     logger.error("Erro no upload do PDF do processo %s para Arquivo_Geral: %s", cnj, upload_err)
 
-            # 2. Upload to Daily Rotating Folder (uploaded once per lawsuit)
-            try:
-                safe_label = sanitize_filename(format_parties_label(parties))
-                daily_pdf_filename = f"{safe_cnj} - {safe_label}.pdf"
-                remote_daily_pdf = f"{daily_folder}/{daily_pdf_filename}"
-                nc_client.upload_file(pdf_tmp, remote_daily_pdf)
-            except Exception as upload_daily_err:
-                logger.error("Erro no upload para pasta diária do processo %s: %s", cnj, upload_daily_err)
+                # 2. Upload to Daily Rotating Folder (also grouped by Party)
+                try:
+                    remote_daily_pdf = f"{daily_folder}/{safe_party}/{safe_cnj}_Relatorio.pdf"
+                    nc_client.upload_file(local_pdf, remote_daily_pdf)
+                except Exception as upload_daily_err:
+                    logger.error("Erro no upload para pasta diária do processo %s: %s", cnj, upload_daily_err)
 
             return True
         finally:

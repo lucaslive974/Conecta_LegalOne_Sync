@@ -196,8 +196,19 @@ def test_get_or_create_public_share_creates_new(mocker):
 
 def test_archive_previous_daily_updates(mocker):
     nc = NextcloudClient("https://nc.test", "user", "pass")
-    mocker.patch.object(nc, "list_subitems", return_value=["arquivo1.pdf", "arquivo2.pdf"])
-    mock_move = mocker.patch.object(nc, "move_item", return_value=True)
+    mocker.patch.object(nc, "list_subitems", return_value=["arquivo1.pdf", "pasta_parte"])
+    mock_del = mocker.patch.object(nc, "delete_item", return_value=True)
 
     nc.archive_previous_daily_updates("Novos", "Arquivo")
-    assert mock_move.call_count == 2
+    assert mock_del.call_count == 2
+    mock_del.assert_any_call("Novos/arquivo1.pdf")
+    mock_del.assert_any_call("Novos/pasta_parte")
+
+
+def test_archive_previous_daily_updates_already_empty(mocker):
+    nc = NextcloudClient("https://nc.test", "user", "pass")
+    mocker.patch.object(nc, "list_subitems", return_value=[])
+    mock_del = mocker.patch.object(nc, "delete_item", return_value=True)
+
+    nc.archive_previous_daily_updates("Novos")
+    mock_del.assert_not_called()

@@ -227,8 +227,14 @@ def test_generate_and_store_reports(mock_config, tmp_path, mocker):
         assert os.path.exists(party_folder / "5003140_58_2023_8_13_0439_Relatorio.pdf")
         assert os.path.exists(party_folder / "5003140_58_2023_8_13_0439_Relatorio.docx")
 
-    # Uploads: 2 in archive (1 per party) + 1 in daily
-    assert mock_nc.upload_file.call_count == 3
+    # Uploads: 2 in archive (1 per party) + 2 in daily (1 per party)
+    assert mock_nc.upload_file.call_count == 4
+    mock_nc.upload_file.assert_any_call(
+        mocker.ANY, "/Arquivo/Empresa Alfa/5003140_58_2023_8_13_0439_Relatorio.pdf"
+    )
+    mock_nc.upload_file.assert_any_call(
+        mocker.ANY, "/Novos/Empresa Alfa/5003140_58_2023_8_13_0439_Relatorio.pdf"
+    )
     service.db.close()
 
 

@@ -241,26 +241,26 @@ class NextcloudClient:
 
         return None
 
-    def archive_previous_daily_updates(self, daily_folder_rel: str, archive_folder_rel: str):
+    def archive_previous_daily_updates(self, daily_folder_rel: str, archive_folder_rel: str | None = None):
         """
-        Clear the daily rotating folder 'Novos_e_Atualizados' by moving older items
-        into permanent 'Arquivo_Geral', preserving the root folder and its public Magic Link.
+        Clear the daily rotating folder 'Novos_e_Atualizados' by purging older items,
+        preserving the root folder and its public Magic Link.
+        Since lawsuit reports are saved directly into 'Arquivo_Geral' upon generation,
+        this routine safely resets the daily showcase for the new round.
         """
         clean_daily = daily_folder_rel.strip("/")
-        clean_archive = archive_folder_rel.strip("/")
 
         subitems = self.list_subitems(clean_daily)
         if not subitems:
             logger.info("A pasta rotativa diária '%s' já está limpa para a nova rodada.", clean_daily)
             return
 
-        logger.info("Movendo %s item(ns) da rodada anterior para o arquivo permanente...", len(subitems))
+        logger.info("Limpando %s item(ns) da rodada anterior na pasta rotativa '%s'...", len(subitems), clean_daily)
         for item in subitems:
             src = f"{clean_daily}/{item}"
-            dst = f"{clean_archive}/{item}"
-            # If it is a top-level item (e.g. process file/folder)
-            if "/" not in item:
-                self.move_item(src, dst)
-            else:
-                self.delete_item(src)
+            deleted = self.delete_item(src)
+            if not deleted:
+                logger.warning("Não foi possível excluir o item anterior '%s' da pasta rotativa.", src)
         logger.info("Pasta rotativa '%s' pronta e desocupada para os novos arquivos.", clean_daily)
+
+    clear_daily_folder = archive_previous_daily_updates
